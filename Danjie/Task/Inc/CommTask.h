@@ -16,6 +16,9 @@
 #define MesgDeal_Time 250       // 消息处理时间
 #define Max_Resend_Times 3      // 最大重新发送次数
 
+/// APP写入RTC备份寄存器，请求Bootloader进入串口升级
+#define OTA_REQUEST_MAGIC 0x424F5441U // ASCII "BOTA"
+
 /// 球盘发送给安卓的消息功能码
 #define t_VersionRequest 0x00      // 版本请求应答
 #define t_HoolleInput 0x01         // 投入弹珠
@@ -62,9 +65,9 @@
 #define r_LightControl 0x15           // 灯控制
 #define r_DigitalTubeData 0x16        // 数字数据
 #define r_CtrlLightness 0x18          // 控台亮度
-#define r_ServoReset 0x20              // 舵机归零
+#define r_ServoReset 0x20             // 舵机归零
 #define r_StopAllDevice 0xFF          // 停止所有输出
-#define r_SystemReset 0xF0            // 系统复位
+#define r_SystemReset 0xF0            // 系统复位/进入Bootloader
 
 /// 接收消息结构体(新球盘)
 typedef struct
