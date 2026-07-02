@@ -15,6 +15,8 @@
 #define Mesg_Tail 0x55
 
 static void USART_RequestMesg(Tx_HandleTypeDef *Tx, Mesg_TypeDef *mesg);
+static bool Board_WriteBootRequest(uint32_t request_magic);
+static void Board_SystemRestart(bool enter_bootloader);
 
 ListHandle_t ResendList, DealList;
 static ListNode_t ResendList_buffer[100];
@@ -47,6 +49,64 @@ extern BreathLight_t *BreathList[];
 extern Setting_TypeDef Setting;
 extern Light_Handle_t *Light_BLUE[8];
 extern Light_Handle_t *Light_YELLOW[8];
+
+static bool Board_WriteBootRequest(uint32_t request_magic)
+{
+    uint32_t timeout;
+    uint32_t retry;
+
+    __HAL_RCC_PWR_CLK_ENABLE();
+    __DSB();
+    (void)RCC->APB1ENR;
+
+    HAL_PWR_EnableBkUpAccess();
+
+    timeout = 100000U;
+    while (((PWR->CR & PWR_CR_DBP) == 0U) && (timeout > 0U))
+        timeout--;
+
+    if (timeout == 0U)
+        return false;
+
+    __HAL_RCC_RTC_ENABLE();
+    __DSB();
+    (void)RCC->BDCR;
+
+    for (retry = 0U; retry < 3U; retry++)
+    {
+        RTC->BKP0R = request_magic;
+        __DSB();
+        __ISB();
+
+        if (RTC->BKP0R == request_magic)
+        {
+            HAL_PWR_DisableBkUpAccess();
+            return true;
+        }
+    }
+
+    HAL_PWR_DisableBkUpAccess();
+    return false;
+}
+
+static void Board_SystemRestart(bool enter_bootloader)
+{
+    uint32_t request_magic = enter_bootloader ? OTA_REQUEST_MAGIC : 0U;
+
+    if (!Board_WriteBootRequest(request_magic))
+        return;
+
+    Motor_Hoolle1.Motor.state = DEVICE_STATE_STOP;
+    Motor_Hoolle2.Motor.state = DEVICE_STATE_STOP;
+    Card.Switch.state = DEVICE_STATE_STOP;
+
+    /*
+     * USART_RequestMesg()已经在命令处理前完成应答，
+     * 延时后再复位，给安卓端留出接收应答的时间。
+     */
+    HAL_Delay(100U);
+    NVIC_SystemReset();
+}
 
 /// 串口1消息验证
 static bool USART1_ReceiveMesg_Verify(void *self, void *mesg)
@@ -189,6 +249,14 @@ static void USART1_Deal(void *Rx_mesg)
                 Motor_Hoolle2.Motor.state = DEVICE_STATE_STOP;
                 Card.Switch.state = DEVICE_STATE_STOP;
                 break;
+                /// 系统复位/进入Bootloader
+            case r_SystemReset:
+                data = (uint32_t)mesg->Data1 << 24 |
+                       (uint32_t)mesg->Data2 << 16 |
+                       (uint32_t)mesg->Data3 << 8 |
+                       (uint32_t)mesg->Data4;
+                Board_SystemRestart(data == OTA_REQUEST_MAGIC);
+                break;
                 /// 数码管显示
             case r_DigitalTubeData:
             {
@@ -239,7 +307,7 @@ static void USART3_Deal(void *Rx_mesg)
             {
                 Servo1.IncreaseAngle(&Servo1, 1);
                 Comm_SendMesg_FillData(&Tx1, Board_to_Android, t_Encoder, 0x00, 0x00);
-                
+
             }
             else if (mesg->ExpandCode == 0x02)
                 Servo1.SetAngle(&Servo1, 90);
