@@ -5,7 +5,16 @@
 #include "port_communicate.h"
 #include "app_list.h"
 /// 版本号
-#define VERSION 20260508
+// #define VERSION 20260508
+#define VERSION_MAJOR  1U
+#define VERSION_MINOR  0U
+#define VERSION_PATCH  0U
+#define VERSION_BUILD  0U
+
+#define VERSION ((VERSION_MAJOR << 24) | \
+                 (VERSION_MINOR << 16) | \
+                 (VERSION_PATCH << 8)  | \
+                  VERSION_BUILD)
 /// 消息类型
 #define Board_to_Android 0x00 // 主板->安卓
 #define Android_to_Board 0x01 // 安卓->主板

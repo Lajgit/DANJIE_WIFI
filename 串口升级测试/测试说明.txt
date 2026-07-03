@@ -1,0 +1,29 @@
+#操作系统：Windows
+#终端：PowerShell
+#串口参数：115200、8N1
+#升级脚本：danjie_serial_ota.py
+
+#没有Python的话安装依赖
+py -m pip install pyserial
+
+# 查询APP版本
+py .\danjie_serial_ota.py version `
+  --port COMx
+
+# 测试进入Bootloader
+py .\danjie_serial_ota.py bootloader `
+  --port COMx
+
+# 完整升级到V1.0.0
+py .\danjie_serial_ota.py upgrade `
+  .\Danjie_V1.0.0.bin `
+  --port COMx `
+  --target-version 0x01000000
+
+# 完整升级到V1.0.1
+py .\danjie_serial_ota.py upgrade `
+  .\Danjie_V1.0.1.bin `
+  --port COMx `
+  --target-version 0x01000100
+
+#说明：Danjie_V1.0.0.bin为 BIN 固件文件名称；--target-version 为该 BIN 内部对应的 APP 版本号；两者必须一致。
