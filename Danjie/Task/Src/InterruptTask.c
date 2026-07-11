@@ -11,6 +11,12 @@
 #define Mesg_Tail 0x55
 #define COIN_INPUT_DEBOUNCE_TIME 50U
 
+/* TIM7每个计数为0.1ms，20个计数对应2ms。 */
+#define HOOLLE_LOW_MIN_COUNT 20U
+#define HOOLLE_INPUT_FILTER_MS 3U
+
+volatile uint16_t HoolleInputPendingCount = 0U;
+
 extern Event_Handle_t Mesg_event;
 extern Event_Handle_t Event;
 extern Motor_Hoolle Motor_Hoolle1, Motor_Hoolle2;
@@ -25,9 +31,65 @@ extern Rx_HandleTypeDef Rx3;
 static uint32_t CoinInputLastTick = 0;
 static uint8_t CoinInputTriggered = 0;
 
+static uint8_t HoolleInputRawState = 1U;
+static uint8_t HoolleInputStableState = 1U;
+static uint8_t HoolleInputSameCount = 0U;
+
+void HoolleInput_FilterInit(void)
+{
+    uint8_t CurrentState;
+
+    CurrentState =
+        HAL_GPIO_ReadPin(
+            HoolleInput_GPIO_Port,
+            HoolleInput_Pin) == GPIO_PIN_SET
+            ? 1U
+            : 0U;
+
+    HoolleInputRawState = CurrentState;
+    HoolleInputStableState = CurrentState;
+    HoolleInputSameCount = 0U;
+}
+
+void HoolleInput_Scan1ms(void)
+{
+    uint8_t CurrentState;
+
+    CurrentState =
+        HAL_GPIO_ReadPin(
+            HoolleInput_GPIO_Port,
+            HoolleInput_Pin) == GPIO_PIN_SET
+            ? 1U
+            : 0U;
+
+    if (CurrentState == HoolleInputRawState)
+    {
+        if (HoolleInputSameCount < HOOLLE_INPUT_FILTER_MS)
+        {
+            HoolleInputSameCount++;
+        }
+    }
+    else
+    {
+        HoolleInputRawState = CurrentState;
+        HoolleInputSameCount = 1U;
+    }
+
+    if (HoolleInputSameCount >= HOOLLE_INPUT_FILTER_MS &&
+        HoolleInputStableState != HoolleInputRawState)
+    {
+        HoolleInputStableState = HoolleInputRawState;
+
+        if (HoolleInputStableState == 0U &&
+            HoolleInputPendingCount < 0xFFFFU)
+        {
+            HoolleInputPendingCount++;
+        }
+    }
+}
+
 static void HoolleInput_IRQ(void)
 {
-    EventGroupSetBits(&Mesg_event, MesgEvent_HoolleInput);
 }
 
 static void CoinInput_IRQ(void)
@@ -45,56 +107,126 @@ static void CoinInput_IRQ(void)
 
 static void Hoolle_1_Output_IRQ(void)
 {
-    if (HAL_GPIO_ReadPin(HoolleOutput_1_GPIO_Port, HoolleOutput_1_Pin) == GPIO_PIN_RESET)
+    static uint8_t LastBallStopped = 0U;
+    uint32_t LowCount;
+
+    if (HAL_GPIO_ReadPin(
+            HoolleOutput_1_GPIO_Port,
+            HoolleOutput_1_Pin) == GPIO_PIN_RESET)
     {
-        /* 脉冲开始：重置计时器并重置运行时 */
         __HAL_TIM_SetCounter(&htim7, 0);
-        Motor_Hoolle1.Motor.ResetRuntime(&Motor_Hoolle1.Motor);
+        Motor_Hoolle1.Motor.ResetRuntime(
+            &Motor_Hoolle1.Motor);
+
+        if (Motor_Hoolle1.Hoolle_num == 1U &&
+            Motor_Hoolle1.Motor.state == DEVICE_STATE_BUSY)
+        {
+            Motor_Hoolle1.Motor.Stop(
+                &Motor_Hoolle1.Motor);
+            LastBallStopped = 1U;
+        }
+        else
+        {
+            LastBallStopped = 0U;
+        }
+
         return;
     }
-    else
+
+    LowCount = __HAL_TIM_GetCounter(&htim7);
+
+    if (LowCount > HOOLLE_LOW_MIN_COUNT)
     {
-        if (__HAL_TIM_GetCounter(&htim7) > 100)
+        EventGroupSetBits(
+            &Mesg_event,
+            MesgEvent_RemainingHoolle);
+
+        if (Motor_Hoolle1.Hoolle_num > 0U)
         {
-            /* 有效脉冲：更新剩余数量并通知任务 */
-            EventGroupSetBits(&Mesg_event, MesgEvent_RemainingHoolle);
-            if (Motor_Hoolle1.Hoolle_num > 0)
+            Motor_Hoolle1.Hoolle_num--;
+            Motor_Hoolle1.RetryCount = 0;
+
+            if (Motor_Hoolle1.Hoolle_num == 0U &&
+                Motor_Hoolle1.Motor.state != DEVICE_STATE_IDLE)
             {
-                Motor_Hoolle1.Hoolle_num--;
-                Motor_Hoolle1.RetryCount = 0;
-                if (Motor_Hoolle1.Hoolle_num == 0 && Motor_Hoolle1.Motor.state != DEVICE_STATE_IDLE)
-                {
-                    Motor_Hoolle1.Motor.state = DEVICE_STATE_STOP;
-                }
+                Motor_Hoolle1.Motor.state =
+                    DEVICE_STATE_STOP;
             }
         }
+
+        LastBallStopped = 0U;
+        return;
     }
+
+    if (LastBallStopped != 0U &&
+        Motor_Hoolle1.Hoolle_num == 1U &&
+        Motor_Hoolle1.Motor.state == DEVICE_STATE_BUSY)
+    {
+        Motor_Hoolle1.Motor.state =
+            DEVICE_STATE_START;
+    }
+
+    LastBallStopped = 0U;
 }
 
 static void Hoolle_2_Output_IRQ(void)
 {
-    if (HAL_GPIO_ReadPin(HoolleOutput_2_GPIO_Port, HoolleOutput_2_Pin) == GPIO_PIN_RESET)
+    static uint8_t LastBallStopped = 0U;
+    uint32_t LowCount;
+
+    if (HAL_GPIO_ReadPin(
+            HoolleOutput_2_GPIO_Port,
+            HoolleOutput_2_Pin) == GPIO_PIN_RESET)
     {
-        /* 脉冲开始：重置计时器并重置运行时 */
         __HAL_TIM_SetCounter(&htim7, 0);
-        Motor_Hoolle2.Motor.ResetRuntime(&Motor_Hoolle2.Motor);
+        Motor_Hoolle2.Motor.ResetRuntime(
+            &Motor_Hoolle2.Motor);
+
+        if (Motor_Hoolle2.Hoolle_num == 1U &&
+            Motor_Hoolle2.Motor.state == DEVICE_STATE_BUSY)
+        {
+            Motor_Hoolle2.Motor.Stop(
+                &Motor_Hoolle2.Motor);
+            LastBallStopped = 1U;
+        }
+        else
+        {
+            LastBallStopped = 0U;
+        }
+
         return;
     }
-    else
+
+    LowCount = __HAL_TIM_GetCounter(&htim7);
+
+    if (LowCount > 1U)
     {
-        if (__HAL_TIM_GetCounter(&htim7) > 100)
+        if (Motor_Hoolle2.Hoolle_num > 0U)
         {
-            if (Motor_Hoolle2.Hoolle_num > 0)
+            Motor_Hoolle2.Hoolle_num--;
+            Motor_Hoolle2.RetryCount = 0;
+
+            if (Motor_Hoolle2.Hoolle_num == 0U &&
+                Motor_Hoolle2.Motor.state != DEVICE_STATE_IDLE)
             {
-                Motor_Hoolle2.Hoolle_num--;
-                Motor_Hoolle2.RetryCount = 0;
-                if (Motor_Hoolle2.Hoolle_num == 0 && Motor_Hoolle2.Motor.state != DEVICE_STATE_IDLE)
-                {
-                    Motor_Hoolle2.Motor.state = DEVICE_STATE_STOP;
-                }
+                Motor_Hoolle2.Motor.state =
+                    DEVICE_STATE_STOP;
             }
         }
+
+        LastBallStopped = 0U;
+        return;
     }
+
+    if (LastBallStopped != 0U &&
+        Motor_Hoolle2.Hoolle_num == 1U &&
+        Motor_Hoolle2.Motor.state == DEVICE_STATE_BUSY)
+    {
+        Motor_Hoolle2.Motor.state =
+            DEVICE_STATE_START;
+    }
+
+    LastBallStopped = 0U;
 }
 
 static void CardOutput_IRQ(void)
