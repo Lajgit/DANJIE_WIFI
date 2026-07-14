@@ -7,7 +7,7 @@
     "buildMode": "fast|multhread",
     "showRepathOnLog": true,
     "threadNum": 12,
-    "rootDir": "e:\\单片机项目\\Source\\Bootloader\\Bootloader_F407\\MDK-ARM",
+    "rootDir": "e:\\单片机项目\\ChatGPT单片机项目\\弹界联网版\\Bootloader_Danjie\\MDK-ARM",
     "dumpPath": "build\\Bootloader",
     "outDir": "build\\Bootloader",
     "ram": 131072,
@@ -100,20 +100,20 @@
             "rw-base": "",
             "xo-base": "",
             "link-scatter": [
-                "e:/单片机项目/Source/Bootloader/Bootloader_F407/MDK-ARM/build/Bootloader/Bootloader_F407.sct"
+                "e:/单片机项目/ChatGPT单片机项目/弹界联网版/Bootloader_Danjie/MDK-ARM/build/Bootloader/Bootloader_F407.sct"
             ]
         }
     },
     "env": {
-        "workspaceFolder": "e:\\单片机项目\\Source\\Bootloader\\Bootloader_F407\\MDK-ARM",
+        "workspaceFolder": "e:\\单片机项目\\ChatGPT单片机项目\\弹界联网版\\Bootloader_Danjie\\MDK-ARM",
         "workspaceFolderBasename": "MDK-ARM",
-        "OutDir": "e:\\单片机项目\\Source\\Bootloader\\Bootloader_F407\\MDK-ARM\\build\\Bootloader",
+        "OutDir": "e:\\单片机项目\\ChatGPT单片机项目\\弹界联网版\\Bootloader_Danjie\\MDK-ARM\\build\\Bootloader",
         "OutDirRoot": "build",
         "OutDirBase": "build\\Bootloader",
         "ProjectName": "Bootloader_F407",
         "ConfigName": "Bootloader",
-        "ProjectRoot": "e:\\单片机项目\\Source\\Bootloader\\Bootloader_F407\\MDK-ARM",
-        "ExecutableName": "e:\\单片机项目\\Source\\Bootloader\\Bootloader_F407\\MDK-ARM\\build\\Bootloader\\Bootloader_F407",
+        "ProjectRoot": "e:\\单片机项目\\ChatGPT单片机项目\\弹界联网版\\Bootloader_Danjie\\MDK-ARM",
+        "ExecutableName": "e:\\单片机项目\\ChatGPT单片机项目\\弹界联网版\\Bootloader_Danjie\\MDK-ARM\\build\\Bootloader\\Bootloader_F407",
         "ChipPackDir": "",
         "ChipName": "",
         "SYS_Platform": "win32",
