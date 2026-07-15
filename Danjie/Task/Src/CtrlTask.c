@@ -10,6 +10,7 @@
 #include "string.h"
 
 #define DoorServoTimeout_time 200
+#define STEEL_BALL_OUTPUT_INTERVAL_MS 500U
 
 //测试舵机2
 #define SERVO2_CLOSE_ANGLE       4U
@@ -220,6 +221,33 @@ void Card_Output(Motor_Card *Switch, uint16_t num)
     }
 }
 
+/**
+ * @brief 非阻塞地按每秒一颗调度钢珠吐出
+ *
+ * 需要在主循环任务中持续调用。函数不使用HAL_Delay，
+ * 上一颗钢珠尚未完成时不会累计新的吐珠数量。
+ */
+void SteelBall_OutputEverySecond(void)
+{
+    static uint32_t LastOutputTick = 0U;
+    uint32_t CurrentTick = Get_SysTime();
+
+    if ((uint32_t)(CurrentTick - LastOutputTick) <
+        STEEL_BALL_OUTPUT_INTERVAL_MS)
+    {
+        return;
+    }
+
+    if (Motor_Hoolle1.Motor.state != DEVICE_STATE_IDLE ||
+        Motor_Hoolle1.Hoolle_num != 0U)
+    {
+        return;
+    }
+
+    LastOutputTick = CurrentTick;
+    Hoolle_Output(&Motor_Hoolle1, 1U);
+}
+
 /// 设备初始化
 void Device_Init(void)
 {
@@ -333,6 +361,7 @@ static void Servo2_OpenCloseTest(void)
 
 void CtrlTask(void)
 {
+    // SteelBall_OutputEverySecond();//每秒吐一颗钢珠
     /*==============吐珠电机控制===============*/
     Ctrl_HoolleMotor(&Motor_Hoolle1, HoolleMotor_Speed, HoolleMotor_Dir, HoolleMotorTimeout_time, HoolleMotorReverse_Time, HoolleMotorRetry_Times, HoolleMotorTimeout_callback);
     Ctrl_HoolleMotor(&Motor_Hoolle2, HoolleMotor2_Speed, HoolleMotor_Dir, HoolleMotorTimeout_time, HoolleMotorReverse_Time, HoolleMotorRetry_Times, HoolleMotorTimeout_callback);
