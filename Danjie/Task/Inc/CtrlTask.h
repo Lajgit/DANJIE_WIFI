@@ -11,8 +11,8 @@
 #define LockValveTimeout_time 2000   // 电子锁超时时间
 #define Valve_TriggerCount 1
 
-#define HoolleMotor_Speed 85 // 吐珠电机速度100%
-#define HoolleMotor2_Speed 80 // 吐珠电机速度40%
+#define HoolleMotor_Speed 100 // 吐珠电机速度100%
+#define HoolleMotor2_Speed 80 // 吐瓷珠电机速度80%
 #define HoolleMotor_Dir 0     // 吐珠电机方向
 
 typedef struct

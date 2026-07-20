@@ -84,7 +84,7 @@ static void Hole_Init(void)
         init.short_callback = Key_ShortCallback;
         init.long_callback = Key_LongCallback;
         init.release_callback = Key_ReleaseCallback;
-        init.debounce_time = KEY_DEBOUNCE_TIME;
+        init.debounce_time = HOLE_DEBOUNCE_TIME;
         init.longpress_time = KEY_LONG_PRESS_TIME;
         init.trigger_frequnecy = KEY_LONG_TRIGGER_FREQUENCY;
         init.trigger_level = GPIO_PIN_SET;
