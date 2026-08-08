@@ -42,9 +42,14 @@ uint8_t LightCache[8] = {0};
 
 static uint8_t LightBlinkOn = 1U;
 static uint32_t LightBlinkTick = 0U;
-static uint8_t PinkBlinkOn = 1U;
-static uint32_t PinkBlinkTick = 0U;
-static uint8_t PinkLightRefreshPending = 1U;
+
+/* 中文注释：左右眼使用独立闪烁时基，避免一只眼的通信命令影响另一只眼 */
+static uint8_t PinkLeftBlinkOn = 1U;
+static uint32_t PinkLeftBlinkTick = 0U;
+static uint8_t PinkLeftRefreshPending = 0U;
+static uint8_t PinkRightBlinkOn = 1U;
+static uint32_t PinkRightBlinkTick = 0U;
+static uint8_t PinkRightRefreshPending = 0U;
 
 static uint8_t IdleLight1FlowActive = 0U;
 static uint8_t IdleLight1FlowHold = 0U;
@@ -94,43 +99,61 @@ void LightTask_Init(void)
     RGB_Flush(&Light2);
 
     LightBlinkTick = HAL_GetTick();
-    PinkBlinkTick = LightBlinkTick;
+    PinkLeftBlinkTick = LightBlinkTick;
+    PinkRightBlinkTick = LightBlinkTick;
 }
 
 void PinkLight_SetState(uint8_t light_id, uint8_t state)
 {
     Light_Handle_t *light = NULL;
+    uint8_t *blink_on = NULL;
+    uint32_t *blink_tick = NULL;
+    uint8_t *refresh_pending = NULL;
 
-    /* 中文注释：粉灯只允许控制左右眼，鼻子始终关闭 */
+    /* 中文注释：粉灯唯一运行时控制入口只接受通信定义的左右眼编号 */
     if (light_id == PINK_LIGHT_LEFT)
+    {
         light = &Light_PLeft;
+        blink_on = &PinkLeftBlinkOn;
+        blink_tick = &PinkLeftBlinkTick;
+        refresh_pending = &PinkLeftRefreshPending;
+    }
     else if (light_id == PINK_LIGHT_RIGHT)
+    {
         light = &Light_PRight;
+        blink_on = &PinkRightBlinkOn;
+        blink_tick = &PinkRightBlinkTick;
+        refresh_pending = &PinkRightRefreshPending;
+    }
     else
+    {
         return;
+    }
 
     /* 中文注释：粉灯不支持流水0x02，只处理关闭、打开和闪烁 */
     if (state != LIGHT_STATE_OFF &&
         state != LIGHT_STATE_ON &&
         state != LIGHT_STATE_BLINK)
+    {
         return;
+    }
 
     light->state = state;
 
     if (state == LIGHT_STATE_BLINK)
     {
-        /* 中文注释：收到闪烁命令后先亮250ms，再灭250ms */
-        PinkBlinkOn = 1U;
-        PinkBlinkTick = HAL_GetTick();
+        /* 中文注释：每只眼收到闪烁命令后独立从亮250ms开始计时 */
+        *blink_on = 1U;
+        *blink_tick = HAL_GetTick();
     }
 
-    PinkLightRefreshPending = 1U;
+    *refresh_pending = 1U;
 }
 
-static void PinkLightBufferFlush(Light_Handle_t *light)
+static void PinkLightBufferFlush(Light_Handle_t *light, uint8_t blink_on)
 {
     if (light->state == LIGHT_STATE_ON ||
-        (light->state == LIGHT_STATE_BLINK && PinkBlinkOn != 0U))
+        (light->state == LIGHT_STATE_BLINK && blink_on != 0U))
     {
         RGB_SetMoreColor(light->light, light->start, light->end, PINK, *(light->Lightness), 255);
     }
@@ -143,25 +166,46 @@ static void PinkLightBufferFlush(Light_Handle_t *light)
 static void PinkLight_Task(void)
 {
     uint32_t now = HAL_GetTick();
+    uint8_t need_flush = 0U;
 
-    if ((Light_PLeft.state == LIGHT_STATE_BLINK ||
-         Light_PRight.state == LIGHT_STATE_BLINK) &&
-        (uint32_t)(now - PinkBlinkTick) >= LIGHT_BLINK_HALF_TIME)
+    /* 中文注释：左眼闪烁只更新左眼自己的相位和刷新标志 */
+    if (Light_PLeft.state == LIGHT_STATE_BLINK &&
+        (uint32_t)(now - PinkLeftBlinkTick) >= LIGHT_BLINK_HALF_TIME)
     {
-        PinkBlinkTick = now;
-        PinkBlinkOn = (PinkBlinkOn == 0U) ? 1U : 0U;
-        PinkLightRefreshPending = 1U;
+        PinkLeftBlinkTick = now;
+        PinkLeftBlinkOn = (PinkLeftBlinkOn == 0U) ? 1U : 0U;
+        PinkLeftRefreshPending = 1U;
     }
 
-    if (PinkLightRefreshPending == 0U)
-        return;
+    /* 中文注释：右眼闪烁只更新右眼自己的相位和刷新标志 */
+    if (Light_PRight.state == LIGHT_STATE_BLINK &&
+        (uint32_t)(now - PinkRightBlinkTick) >= LIGHT_BLINK_HALF_TIME)
+    {
+        PinkRightBlinkTick = now;
+        PinkRightBlinkOn = (PinkRightBlinkOn == 0U) ? 1U : 0U;
+        PinkRightRefreshPending = 1U;
+    }
 
-    /* 中文注释：鼻子32~35无论场景和开关门状态都强制关闭 */
-    RGB_SetMoreColor(&Light1, PINK_NOSE_START, PINK_NOSE_END, NONE, LightBoard_Lightness, 0);
-    PinkLightBufferFlush(&Light_PLeft);
-    PinkLightBufferFlush(&Light_PRight);
-    RGB_Flush(&Light1);
-    PinkLightRefreshPending = 0U;
+    if (PinkLeftRefreshPending != 0U)
+    {
+        PinkLightBufferFlush(&Light_PLeft, PinkLeftBlinkOn);
+        PinkLeftRefreshPending = 0U;
+        need_flush = 1U;
+    }
+
+    if (PinkRightRefreshPending != 0U)
+    {
+        PinkLightBufferFlush(&Light_PRight, PinkRightBlinkOn);
+        PinkRightRefreshPending = 0U;
+        need_flush = 1U;
+    }
+
+    if (need_flush != 0U)
+    {
+        /* 中文注释：鼻子32~35始终关闭；左右眼颜色只由各自协议状态决定 */
+        RGB_SetMoreColor(&Light1, PINK_NOSE_START, PINK_NOSE_END, NONE, LightBoard_Lightness, 0);
+        RGB_Flush(&Light1);
+    }
 }
 
 static void IdleLight1Flow_Task(void)
@@ -311,15 +355,6 @@ static void LightFlush_Task(void)
 /// 灯光任务
 void LightTask(void)
 {
-    static Scene_t LastScene = IdleScene;
-
-    if (Scene != LastScene)
-    {
-        /* 中文注释：场景切换可能清空Light1缓存，重新恢复左右眼协议状态 */
-        PinkLightRefreshPending = 1U;
-        LastScene = Scene;
-    }
-
     if (Scene != IdleScene)
         IdleLight1FlowActive = 0U;
 
@@ -355,11 +390,11 @@ void LightTask(void)
         static uint32_t time = 0;
         if (EventGroupCheckBits(&Event, Event_SceneChange) == true)
         {
-            RGB_SetAllColor(&Light1, NONE, 0, 0);
+            /* 中文注释：场景切换只清0~61，禁止改写左右眼62~65 */
+            RGB_SetMoreColor(&Light1, 0, 61, NONE, 0, 0);
             RGB_SetAllColor(&Light2, NONE, 0, 0);
             RGB_Flush(&Light1);
             RGB_Flush(&Light2);
-            PinkLightRefreshPending = 1U;
             //     // LightResume();
             EventGroupClearBits(&Event, Event_SceneChange);
         }
@@ -382,11 +417,11 @@ void LightTask(void)
         if (EventGroupCheckBits(&Event, Event_SceneChange))
         {
             EventGroupClearBits(&Event, Event_SceneChange);
-            RGB_CleanAll(&Light1);
+            /* 中文注释：小游戏场景只清0~61，禁止改写左右眼62~65 */
+            RGB_SetMoreColor(&Light1, 0, 61, NONE, 0, 0);
             RGB_CleanAll(&Light2);
             RGB_Flush(&Light1);
             RGB_Flush(&Light2);
-            PinkLightRefreshPending = 1U;
         }
     }
     if (Scene == LittleGame_2)
@@ -394,14 +429,14 @@ void LightTask(void)
         if (EventGroupCheckBits(&Event, Event_SceneChange))
         {
             EventGroupClearBits(&Event, Event_SceneChange);
-            RGB_CleanAll(&Light1);
+            /* 中文注释：小游戏场景只清0~61，禁止改写左右眼62~65 */
+            RGB_SetMoreColor(&Light1, 0, 61, NONE, 0, 0);
             RGB_CleanAll(&Light2);
             RGB_Flush(&Light1);
             RGB_Flush(&Light2);
-            PinkLightRefreshPending = 1U;
         }
     }
 
-    /* 中文注释：粉灯独立于开关门事件和场景灯效，统一在最后恢复协议状态 */
+    /* 中文注释：左右眼只根据通信设置的状态及其闪烁时基运行 */
     PinkLight_Task();
 }
