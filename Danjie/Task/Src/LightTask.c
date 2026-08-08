@@ -9,7 +9,7 @@
 #define PINK_NOSE_START 32U
 #define PINK_NOSE_END 35U
 
-#define LIGHT1_IDLE_BLUE_COUNT 58U
+#define LIGHT1_IDLE_FLOW_COUNT Light1_RGBbufSize
 #define LIGHT1_IDLE_FLOW_STEP_TIME 50U
 #define LIGHT1_IDLE_FLOW_HOLD_TIME 1000U
 
@@ -167,7 +167,6 @@ static void PinkLight_Task(void)
 static void IdleLight1Flow_Task(void)
 {
     uint32_t now = HAL_GetTick();
-    uint16_t physical_index;
 
     if (IdleLight1FlowActive == 0U)
     {
@@ -203,17 +202,16 @@ static void IdleLight1Flow_Task(void)
 
     IdleLight1FlowTick = now;
 
-    /* 中文注释：逻辑序号32之后跳过鼻子32~35，继续从物理36号灯流水 */
-    if (IdleLight1FlowIndex < 32U)
-        physical_index = IdleLight1FlowIndex;
-    else
-        physical_index = IdleLight1FlowIndex + 4U;
-
-    RGB_SetMoreColor(&Light1, physical_index, physical_index, SKYBLUE, LightBoard_Lightness, 255);
-    RGB_Flush(&Light1);
+    /* 中文注释：仍按原66个灯位计时，仅在粉灯位置跳过写入，保持原流水节奏 */
+    if (IdleLight1FlowIndex <= 31U ||
+        (IdleLight1FlowIndex >= 36U && IdleLight1FlowIndex <= 61U))
+    {
+        RGB_SetMoreColor(&Light1, IdleLight1FlowIndex, IdleLight1FlowIndex, SKYBLUE, LightBoard_Lightness, 255);
+        RGB_Flush(&Light1);
+    }
 
     IdleLight1FlowIndex++;
-    if (IdleLight1FlowIndex >= LIGHT1_IDLE_BLUE_COUNT)
+    if (IdleLight1FlowIndex >= LIGHT1_IDLE_FLOW_COUNT)
     {
         IdleLight1FlowHold = 1U;
         IdleLight1FlowHoldTick = now;
