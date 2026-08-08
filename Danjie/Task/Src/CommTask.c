@@ -225,13 +225,29 @@ static void USART1_Deal(void *Rx_mesg)
                 break;
                 /// 灯光控制
             case r_LightControl:
-                if (mesg->Data3 != 0x00)
+                /*
+                 * 中文注释：
+                 * Data2：粉灯编号，0x02左眼，0x03右眼；0x00不控制粉灯。
+                 * Data3：蓝灯编号0x01~0x08；Data4：黄灯编号0x01~0x08。
+                 * ExpandCode：0x00关闭，0x01打开，0x02流水，0x03闪烁。
+                 * 粉灯不支持0x02流水，鼻子灯始终关闭。
+                 */
+                if (mesg->Data2 == PINK_LIGHT_LEFT ||
+                    mesg->Data2 == PINK_LIGHT_RIGHT)
                 {
-                    Light_BLUE[mesg->Data3 - 1]->state = mesg->ExpandCode;
+                    PinkLight_SetState(mesg->Data2, mesg->ExpandCode);
                 }
-                if (mesg->Data4 != 0x00)
+
+                if (mesg->ExpandCode <= LIGHT_STATE_BLINK)
                 {
-                    Light_YELLOW[mesg->Data4 - 1]->state = mesg->ExpandCode;
+                    if (mesg->Data3 >= 0x01U && mesg->Data3 <= 0x08U)
+                    {
+                        Light_BLUE[mesg->Data3 - 1U]->state = mesg->ExpandCode;
+                    }
+                    if (mesg->Data4 >= 0x01U && mesg->Data4 <= 0x08U)
+                    {
+                        Light_YELLOW[mesg->Data4 - 1U]->state = mesg->ExpandCode;
+                    }
                 }
                 break;
                 /// 控台亮度
