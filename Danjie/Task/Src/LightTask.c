@@ -6,6 +6,13 @@
 #include "app_list.h"
 #include "tim.h"
 
+#define PINK_NOSE_START 32U
+#define PINK_NOSE_END 35U
+
+#define LIGHT1_IDLE_BLUE_COUNT 58U
+#define LIGHT1_IDLE_FLOW_STEP_TIME 50U
+#define LIGHT1_IDLE_FLOW_HOLD_TIME 1000U
+
 RGB_t Light1_RGBbuf[Light1_RGBbufSize];
 uint16_t Light1_CRRbuf[Light1_CRRbufSize];
 RGB_t Light2_RGBbuf[Light2_RGBbufSize];
@@ -21,7 +28,7 @@ extern Scene_t Scene;
 
 Light_t Light1;
 Light_t Light2;
-Light_Handle_t Light_B1, Light_B2, Light_B3, Light_B4, Light_B5, Light_B6, Light_B7, Light_B8, Light_Y1, Light_Y2, Light_Y3, Light_Y4, Light_Y5, Light_Y6, Light_Y7, Light_Y8, Light_P3, Light_P1_2;
+Light_Handle_t Light_B1, Light_B2, Light_B3, Light_B4, Light_B5, Light_B6, Light_B7, Light_B8, Light_Y1, Light_Y2, Light_Y3, Light_Y4, Light_Y5, Light_Y6, Light_Y7, Light_Y8, Light_PLeft, Light_PRight;
 Light_Handle_t *Light_BLUE[8] = {&Light_B1, &Light_B2, &Light_B3, &Light_B4, &Light_B5, &Light_B6, &Light_B7, &Light_B8};
 Light_Handle_t *Light_YELLOW[8] = {&Light_Y1, &Light_Y2, &Light_Y3, &Light_Y4, &Light_Y5, &Light_Y6, &Light_Y7, &Light_Y8};
 
@@ -33,8 +40,19 @@ static BreathLight_t J7 = {&htim11, TIM_CHANNEL_1, 999, 0, GPIOB, GPIO_PIN_9, 0,
 BreathLight_t *BreathList[] = {&J2, &J3, &J6, &J7};
 uint8_t LightCache[8] = {0};
 
+static uint8_t LightBlinkOn = 1U;
+static uint32_t LightBlinkTick = 0U;
+static uint8_t PinkBlinkOn = 1U;
+static uint32_t PinkBlinkTick = 0U;
+static uint8_t PinkLightRefreshPending = 1U;
+
+static uint8_t IdleLight1FlowActive = 0U;
+static uint8_t IdleLight1FlowHold = 0U;
+static uint16_t IdleLight1FlowIndex = 0U;
+static uint32_t IdleLight1FlowTick = 0U;
+static uint32_t IdleLight1FlowHoldTick = 0U;
+
 extern Event_Handle_t Event;
-extern Event_Handle_t Mesg_event;
 extern Setting_TypeDef Setting;
 void LightTask_Init(void)
 {
@@ -54,12 +72,13 @@ void LightTask_Init(void)
     LightDerive_Init(&Light_B2, &Light1, 8, 15, (uint8_t *)&Setting.Board_Lightness);
     LightDerive_Init(&Light_B3, &Light1, 16, 23, (uint8_t *)&Setting.Board_Lightness);
     LightDerive_Init(&Light_B4, &Light1, 24, 31, (uint8_t *)&Setting.Board_Lightness);
-    LightDerive_Init(&Light_P3, &Light1, 32, 35, (uint8_t *)&Setting.Board_Lightness);
     LightDerive_Init(&Light_B5, &Light1, 36, 43, (uint8_t *)&Setting.Board_Lightness);
     LightDerive_Init(&Light_B6, &Light1, 44, 49, (uint8_t *)&Setting.Board_Lightness);
     LightDerive_Init(&Light_B7, &Light1, 50, 55, (uint8_t *)&Setting.Board_Lightness);
     LightDerive_Init(&Light_B8, &Light1, 56, 61, (uint8_t *)&Setting.Board_Lightness);
-    LightDerive_Init(&Light_P1_2, &Light1, 62, 65, (uint8_t *)&Setting.Board_Lightness);
+    /* 中文注释：右眼为62~63，左眼为64~65，鼻子32~35不建立可控灯对象 */
+    LightDerive_Init(&Light_PRight, &Light1, 62, 63, (uint8_t *)&Setting.Board_Lightness);
+    LightDerive_Init(&Light_PLeft, &Light1, 64, 65, (uint8_t *)&Setting.Board_Lightness);
 
     LightDerive_Init(&Light_Y1, &Light2, 0, 7, (uint8_t *)&Setting.Board_Lightness);
     LightDerive_Init(&Light_Y2, &Light2, 8, 15, (uint8_t *)&Setting.Board_Lightness);
@@ -73,37 +92,135 @@ void LightTask_Init(void)
     RGB_SetAllColor(&Light2, NONE, 0, 0);
     RGB_Flush(&Light1);
     RGB_Flush(&Light2);
+
+    LightBlinkTick = HAL_GetTick();
+    PinkBlinkTick = LightBlinkTick;
 }
 
-/// 洞口灯光闪烁任务
-static void HoleLightBlink_Task(void)
+void PinkLight_SetState(uint8_t light_id, uint8_t state)
 {
-    static uint32_t time = 0;
-    static uint8_t Lightness = 10;
-    if (EventGroupCheckBits(&Mesg_event, Event_DoorOpen) == true)
+    Light_Handle_t *light = NULL;
+
+    /* 中文注释：粉灯只允许控制左右眼，鼻子始终关闭 */
+    if (light_id == PINK_LIGHT_LEFT)
+        light = &Light_PLeft;
+    else if (light_id == PINK_LIGHT_RIGHT)
+        light = &Light_PRight;
+    else
+        return;
+
+    /* 中文注释：粉灯不支持流水0x02，只处理关闭、打开和闪烁 */
+    if (state != LIGHT_STATE_OFF &&
+        state != LIGHT_STATE_ON &&
+        state != LIGHT_STATE_BLINK)
+        return;
+
+    light->state = state;
+
+    if (state == LIGHT_STATE_BLINK)
     {
-        LightEffect_Unblock_SetColor(&Light1, 32, 35, PINK, LightBoard_Lightness, 255, 0);
-        if (HAL_GetTick() - time > 250)
-        {
-            RGB_SetMoreColor(&Light1, 62, 65, PINK, Lightness, 255);
-            if (Lightness == 10)
-                Lightness = 0;
-            else
-                Lightness = 10;
-            RGB_LocalRefresh(&Light1, 62, 65);
-            time = HAL_GetTick();
-        }
-        // LightEffect_Unblock_Blink(&Light1, 62, 65, PINK, LightBoard_Lightness, 255, 250);
+        /* 中文注释：收到闪烁命令后先亮250ms，再灭250ms */
+        PinkBlinkOn = 1U;
+        PinkBlinkTick = HAL_GetTick();
+    }
+
+    PinkLightRefreshPending = 1U;
+}
+
+static void PinkLightBufferFlush(Light_Handle_t *light)
+{
+    if (light->state == LIGHT_STATE_ON ||
+        (light->state == LIGHT_STATE_BLINK && PinkBlinkOn != 0U))
+    {
+        RGB_SetMoreColor(light->light, light->start, light->end, PINK, *(light->Lightness), 255);
     }
     else
     {
-        RGB_SetMoreColor(&Light1, 32, 35, NONE, LightBoard_Lightness, 0);
-        RGB_SetMoreColor(&Light1, 62, 65, NONE, LightBoard_Lightness, 0);
-        RGB_Flush(&Light1);
+        RGB_SetMoreColor(light->light, light->start, light->end, NONE, *(light->Lightness), 0);
     }
 }
 
-/// 洞口灯光流水任务
+static void PinkLight_Task(void)
+{
+    uint32_t now = HAL_GetTick();
+
+    if ((Light_PLeft.state == LIGHT_STATE_BLINK ||
+         Light_PRight.state == LIGHT_STATE_BLINK) &&
+        (uint32_t)(now - PinkBlinkTick) >= LIGHT_BLINK_HALF_TIME)
+    {
+        PinkBlinkTick = now;
+        PinkBlinkOn = (PinkBlinkOn == 0U) ? 1U : 0U;
+        PinkLightRefreshPending = 1U;
+    }
+
+    if (PinkLightRefreshPending == 0U)
+        return;
+
+    /* 中文注释：鼻子32~35无论场景和开关门状态都强制关闭 */
+    RGB_SetMoreColor(&Light1, PINK_NOSE_START, PINK_NOSE_END, NONE, LightBoard_Lightness, 0);
+    PinkLightBufferFlush(&Light_PLeft);
+    PinkLightBufferFlush(&Light_PRight);
+    RGB_Flush(&Light1);
+    PinkLightRefreshPending = 0U;
+}
+
+static void IdleLight1Flow_Task(void)
+{
+    uint32_t now = HAL_GetTick();
+    uint16_t physical_index;
+
+    if (IdleLight1FlowActive == 0U)
+    {
+        IdleLight1FlowActive = 1U;
+        IdleLight1FlowHold = 0U;
+        IdleLight1FlowIndex = 0U;
+        IdleLight1FlowTick = now;
+        IdleLight1FlowHoldTick = now;
+
+        /* 中文注释：待机流水只清蓝灯区域，跳过鼻子和左右眼 */
+        RGB_SetMoreColor(&Light1, 0, 31, NONE, LightBoard_Lightness, 0);
+        RGB_SetMoreColor(&Light1, 36, 61, NONE, LightBoard_Lightness, 0);
+        RGB_Flush(&Light1);
+        return;
+    }
+
+    if (IdleLight1FlowHold != 0U)
+    {
+        if ((uint32_t)(now - IdleLight1FlowHoldTick) >= LIGHT1_IDLE_FLOW_HOLD_TIME)
+        {
+            IdleLight1FlowHold = 0U;
+            IdleLight1FlowIndex = 0U;
+            IdleLight1FlowTick = now;
+            RGB_SetMoreColor(&Light1, 0, 31, NONE, LightBoard_Lightness, 0);
+            RGB_SetMoreColor(&Light1, 36, 61, NONE, LightBoard_Lightness, 0);
+            RGB_Flush(&Light1);
+        }
+        return;
+    }
+
+    if ((uint32_t)(now - IdleLight1FlowTick) < LIGHT1_IDLE_FLOW_STEP_TIME)
+        return;
+
+    IdleLight1FlowTick = now;
+
+    /* 中文注释：逻辑序号32之后跳过鼻子32~35，继续从物理36号灯流水 */
+    if (IdleLight1FlowIndex < 32U)
+        physical_index = IdleLight1FlowIndex;
+    else
+        physical_index = IdleLight1FlowIndex + 4U;
+
+    RGB_SetMoreColor(&Light1, physical_index, physical_index, SKYBLUE, LightBoard_Lightness, 255);
+    RGB_Flush(&Light1);
+
+    IdleLight1FlowIndex++;
+    if (IdleLight1FlowIndex >= LIGHT1_IDLE_BLUE_COUNT)
+    {
+        IdleLight1FlowHold = 1U;
+        IdleLight1FlowHoldTick = now;
+    }
+}
+
+/// 洞口灯光流水/开关/闪烁任务
 static void LightBufferFlush(Light_Handle_t *light, RGB_t color)
 {
     if (light->state == LIGHT_STATE_FLOW)
@@ -121,6 +238,64 @@ static void LightBufferFlush(Light_Handle_t *light, RGB_t color)
         RGB_SetMoreColor(light->light, light->start, light->end, NONE, *(light->Lightness), 0);
     else if (light->state == LIGHT_STATE_ON)
         RGB_SetMoreColor(light->light, light->start, light->end, color, *(light->Lightness), 255);
+    else if (light->state == LIGHT_STATE_BLINK)
+    {
+        /* 中文注释：蓝灯、黄灯0x03为500ms周期闪烁 */
+        if (LightBlinkOn != 0U)
+            RGB_SetMoreColor(light->light, light->start, light->end, color, *(light->Lightness), 255);
+        else
+            RGB_SetMoreColor(light->light, light->start, light->end, NONE, *(light->Lightness), 0);
+    }
+}
+
+static void LightBlink_Task(void)
+{
+    uint32_t now = HAL_GetTick();
+    uint8_t has_blink = 0U;
+    uint8_t refresh_light1 = 0U;
+    uint8_t refresh_light2 = 0U;
+
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        if (Light_BLUE[i]->state == LIGHT_STATE_BLINK ||
+            Light_YELLOW[i]->state == LIGHT_STATE_BLINK)
+        {
+            has_blink = 1U;
+            break;
+        }
+    }
+
+    if (has_blink == 0U)
+    {
+        LightBlinkOn = 1U;
+        LightBlinkTick = now;
+        return;
+    }
+
+    if ((uint32_t)(now - LightBlinkTick) < LIGHT_BLINK_HALF_TIME)
+        return;
+
+    LightBlinkTick = now;
+    LightBlinkOn = (LightBlinkOn == 0U) ? 1U : 0U;
+
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        if (Light_BLUE[i]->state == LIGHT_STATE_BLINK)
+        {
+            LightBufferFlush(Light_BLUE[i], SKYBLUE);
+            refresh_light1 = 1U;
+        }
+        if (Light_YELLOW[i]->state == LIGHT_STATE_BLINK)
+        {
+            LightBufferFlush(Light_YELLOW[i], GREEN);
+            refresh_light2 = 1U;
+        }
+    }
+
+    if (refresh_light1 != 0U)
+        RGB_Flush(&Light1);
+    if (refresh_light2 != 0U)
+        RGB_Flush(&Light2);
 }
 
 /// 洞口灯光刷新任务
@@ -138,13 +313,29 @@ static void LightFlush_Task(void)
 /// 灯光任务
 void LightTask(void)
 {
-    // if (EventGroupCheckBits(&Mesg_event, Event_DoorOpen) == true)
-    //     LightEffect_Unblock_Blink(&Light1, 36, 37, PINK, LightBoard_Lightness, 255, 250);
-    // else
-    //     LightEffect_Unblock_SetColor(&Light1, 36, 37, NONE, LightBoard_Lightness, 0, 0);
+    static Scene_t LastScene = IdleScene;
+
+    if (Scene != LastScene)
+    {
+        /* 中文注释：场景切换可能清空Light1缓存，重新恢复左右眼协议状态 */
+        PinkLightRefreshPending = 1U;
+        LastScene = Scene;
+    }
+
+    if (Scene != IdleScene)
+        IdleLight1FlowActive = 0U;
+
+    if (Scene != PlayingScene)
+    {
+        LightBlinkOn = 1U;
+        LightBlinkTick = HAL_GetTick();
+    }
+
     if (Scene == SettingScene)
     {
-        LightEffect_Unblock_SetColor(&Light1, 0, Light1_RGBbufSize, WHITE, LightBoard_Lightness, 255, true);
+        /* 中文注释：设置场景只点亮蓝灯区域，跳过鼻子和左右眼 */
+        LightEffect_Unblock_SetColor(&Light1, 0, 31, WHITE, LightBoard_Lightness, 255, true);
+        LightEffect_Unblock_SetColor(&Light1, 36, 61, WHITE, LightBoard_Lightness, 255, true);
         BreathLight_SetLightKeep(&J2, 0, Setting.LightBelt_Lightness, 255);
         BreathLight_SetLightKeep(&J3, 0, Setting.LightBelt_Lightness, 255);
         BreathLight_SetLightKeep(&J6, 0, Setting.LightBelt_Lightness, 255);
@@ -157,7 +348,8 @@ void LightTask(void)
         BreathLight_SetLightKeep(&J3, 0, Setting.LightBelt_Lightness, 255);
         BreathLight_SetLightKeep(&J6, 0, Setting.LightBelt_Lightness, 255);
         BreathLight_SetLightKeep(&J7, 0, Setting.LightBelt_Lightness, 255);
-        LightEffect_Unblock_Flow(&Light1, 0, Light1_RGBbufSize, NONE, SKYBLUE, LightBoard_Lightness, 255, 50, 1000, 0);
+        /* 中文注释：Light1待机流水跳过粉灯区域，Light2保持原黄灯流水 */
+        IdleLight1Flow_Task();
         LightEffect_Unblock_Flow(&Light2, 0, Light2_RGBbufSize, NONE, GREEN, LightBoard_Lightness, 255, 50, 1000, 0);
     }
     if (Scene == PlayingScene)
@@ -169,9 +361,11 @@ void LightTask(void)
             RGB_SetAllColor(&Light2, NONE, 0, 0);
             RGB_Flush(&Light1);
             RGB_Flush(&Light2);
+            PinkLightRefreshPending = 1U;
             //     // LightResume();
             EventGroupClearBits(&Event, Event_SceneChange);
         }
+        LightBlink_Task();
         if (HAL_GetTick() - time > 100)
         {
             LightFlush_Task();
@@ -194,6 +388,7 @@ void LightTask(void)
             RGB_CleanAll(&Light2);
             RGB_Flush(&Light1);
             RGB_Flush(&Light2);
+            PinkLightRefreshPending = 1U;
         }
     }
     if (Scene == LittleGame_2)
@@ -205,8 +400,10 @@ void LightTask(void)
             RGB_CleanAll(&Light2);
             RGB_Flush(&Light1);
             RGB_Flush(&Light2);
+            PinkLightRefreshPending = 1U;
         }
     }
-    if (Scene != IdleScene)
-        HoleLightBlink_Task();
+
+    /* 中文注释：粉灯独立于开关门事件和场景灯效，统一在最后恢复协议状态 */
+    PinkLight_Task();
 }
