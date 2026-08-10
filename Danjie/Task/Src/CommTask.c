@@ -34,6 +34,9 @@ Rx_HandleTypeDef Rx1;
 Tx_HandleTypeDef Tx3;
 Rx_HandleTypeDef Rx3;
 
+// 中文注释：默认保持原有行为，允许旋钮控制一号舵机。
+static bool ServoKnobEnabled = true;
+
 extern Event_Handle_t Event;
 extern Event_Handle_t Mesg_event;
 extern Motor_Card Card;
@@ -255,6 +258,14 @@ static void USART1_Deal(void *Rx_mesg)
                 Setting.Ctrl_Lightness = mesg->Data4;
                 Comm_SendMesg_FillData(&Tx3, Board_to_Ctrl, 0x04, Setting.Ctrl_Lightness, 0x00);
                 break;
+                /// 舵机旋钮控制启用
+            case r_ServoEnable:
+                // 中文注释：0x00关闭旋钮对舵机的控制，0x01启用，其他值保持当前状态。
+                if (mesg->ExpandCode == 0x00)
+                    ServoKnobEnabled = false;
+                else if (mesg->ExpandCode == 0x01)
+                    ServoKnobEnabled = true;
+                break;
             /// 舵机归零
             case r_ServoReset:
                 Servo1.SetAngle(&Servo1, 90);
@@ -314,19 +325,25 @@ static void USART3_Deal(void *Rx_mesg)
             break;
         /// 编码器
         case 0x03:
+            // 中文注释：禁用时仍上报旋钮方向，仅禁止旋钮改变Servo1角度。
             if (mesg->ExpandCode == 0x00)
             {
-                Servo1.DecreaseAngle(&Servo1, 1);
+                if (ServoKnobEnabled)
+                    Servo1.DecreaseAngle(&Servo1, 1);
                 Comm_SendMesg_FillData(&Tx1, Board_to_Android, t_Encoder, 0x00, 0x01);
             }
             else if (mesg->ExpandCode == 0x01)
             {
-                Servo1.IncreaseAngle(&Servo1, 1);
+                if (ServoKnobEnabled)
+                    Servo1.IncreaseAngle(&Servo1, 1);
                 Comm_SendMesg_FillData(&Tx1, Board_to_Android, t_Encoder, 0x00, 0x00);
 
             }
             else if (mesg->ExpandCode == 0x02)
-                Servo1.SetAngle(&Servo1, 90);
+            {
+                if (ServoKnobEnabled)
+                    Servo1.SetAngle(&Servo1, 90);
+            }
             break;
         }
     }
