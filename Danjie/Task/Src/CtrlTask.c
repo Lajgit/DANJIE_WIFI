@@ -255,9 +255,10 @@ void Device_Init(void)
     Device_Motor_Init(&Motor_Hoolle2.Motor, &htim1, TIM_CHANNEL_3, &htim1, TIM_CHANNEL_4);
     Device_Switch_Init(&Card.Switch, CardOutput_GPIO_Port, CardOutput_Pin, GPIO_PIN_SET);
     Device_Switch_Init(&Lock_Valve.Switch, GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-    Device_Servo_Init(&Servo1, &htim2, TIM_CHANNEL_3, 50, 130, 90);
-    Device_Servo_Init(&Servo2, &htim2, TIM_CHANNEL_1, 5, 65, 5);
-    Device_Servo_Init(&Servo3, &htim2, TIM_CHANNEL_2, 115, 175, 115);
+    Device_Servo_Init(&Servo1, &htim2, TIM_CHANNEL_3, 45, 135, 90);
+    Device_Servo_Init(&Servo2, &htim2, TIM_CHANNEL_1, 0, 180, 110);
+    Device_Servo_Init(&Servo3, &htim2, TIM_CHANNEL_2, 0, 180, 180);
+    
     Servo2.SetAngle = DoorServo_SetAngle;
     Servo3.SetAngle = DoorServo_SetAngle;
     HAL_TIM_Base_Start(&htim7);
@@ -269,7 +270,7 @@ void Device_Init(void)
     Motor_Hoolle1.ClearMode = 0;
     Motor_Hoolle2.ClearMode = 0;
     Card.Card_num = 0;
-    Servo2.SetAngle(&Servo2, 5);
+    Servo2.SetAngle(&Servo2, 110);
     Servo3.SetAngle(&Servo3, 115);
 }
 

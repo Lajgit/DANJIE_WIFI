@@ -204,24 +204,24 @@ static void USART1_Deal(void *Rx_mesg)
                 break;
                 /// 舵机控制
             case r_ServoControl:
-                if (mesg->ExpandCode == 0x00)
-                {
-                    // 关门
-                    Servo2.SetAngle(&Servo2, 5);
-                    Servo3.SetAngle(&Servo3, 175);
-                    RGB_SetMoreColor(&Light1, 19, 20, NONE, 0, 0);
-                    RGB_SetMoreColor(&Light1, 36, 37, NONE, 0, 0);
-                    EventGroupClearBits(&Mesg_event, Event_DoorOpen);
-                    Light1.Init = true;
-                }
-                if (mesg->ExpandCode == 0x01)
-                {
-                    // 开门
-                    Servo2.SetAngle(&Servo2, 65);
-                    Servo3.SetAngle(&Servo3, 115);
-                    EventGroupSetBits(&Mesg_event, Event_DoorOpen);
-                    Light1.Init = true;
-                }
+                // if (mesg->ExpandCode == 0x00)
+                // {
+                //     // 关门
+                //     Servo2.SetAngle(&Servo2, 5);
+                //     Servo3.SetAngle(&Servo3, 175);
+                //     RGB_SetMoreColor(&Light1, 19, 20, NONE, 0, 0);
+                //     RGB_SetMoreColor(&Light1, 36, 37, NONE, 0, 0);
+                //     EventGroupClearBits(&Mesg_event, Event_DoorOpen);
+                //     Light1.Init = true;
+                // }
+                // if (mesg->ExpandCode == 0x01)
+                // {
+                //     // 开门
+                //     Servo2.SetAngle(&Servo2, 65);
+                //     Servo3.SetAngle(&Servo3, 115);
+                //     EventGroupSetBits(&Mesg_event, Event_DoorOpen);
+                //     Light1.Init = true;
+                // }
                 break;
                 /// 灯光控制
             case r_LightControl:
