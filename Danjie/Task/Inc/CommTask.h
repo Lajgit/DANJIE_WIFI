@@ -6,9 +6,11 @@
 #include "app_list.h"
 /// 版本号
 // #define VERSION 20260508
+//V1.0.5.0 增加了舵机控制和灯光闪烁控制
+//V1.0.6.0 增加了旋转灯效
 #define VERSION_MAJOR  1U
 #define VERSION_MINOR  0U
-#define VERSION_PATCH  0U
+#define VERSION_PATCH  6U
 #define VERSION_BUILD  0U
 
 #define VERSION ((VERSION_MAJOR << 24) | \
