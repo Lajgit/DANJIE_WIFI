@@ -232,8 +232,8 @@ static void USART1_Deal(void *Rx_mesg)
                  * 中文注释：
                  * Data2：粉灯编号，0x02左眼，0x03右眼；0x00不控制粉灯。
                  * Data3：蓝灯编号0x01~0x08；Data4：黄灯编号0x01~0x08。
-                 * ExpandCode：0x00关闭，0x01打开，0x02流水，0x03闪烁。
-                 * 粉灯不支持0x02流水，鼻子灯始终关闭。
+                 * ExpandCode：0x00关闭，0x01打开，0x02流水，0x03闪烁，0x04双灯珠旋转。
+                 * 粉灯不支持0x02流水和0x04旋转，鼻子灯始终关闭。
                  */
                 if (mesg->Data2 == PINK_LIGHT_LEFT ||
                     mesg->Data2 == PINK_LIGHT_RIGHT)
@@ -241,14 +241,26 @@ static void USART1_Deal(void *Rx_mesg)
                     PinkLight_SetState(mesg->Data2, mesg->ExpandCode);
                 }
 
-                if (mesg->ExpandCode <= LIGHT_STATE_BLINK)
+                if (mesg->ExpandCode <= LIGHT_STATE_ROTATE)
                 {
                     if (mesg->Data3 >= 0x01U && mesg->Data3 <= 0x08U)
                     {
+                        /* 中文注释：首次切换到0x04时从本组第一颗开始旋转 */
+                        if (mesg->ExpandCode == LIGHT_STATE_ROTATE &&
+                            Light_BLUE[mesg->Data3 - 1U]->state != LIGHT_STATE_ROTATE)
+                        {
+                            Light_BLUE[mesg->Data3 - 1U]->index = Light_BLUE[mesg->Data3 - 1U]->start;
+                        }
                         Light_BLUE[mesg->Data3 - 1U]->state = mesg->ExpandCode;
                     }
                     if (mesg->Data4 >= 0x01U && mesg->Data4 <= 0x08U)
                     {
+                        /* 中文注释：黄灯各组使用自己的start/end自动适配实际灯珠数量 */
+                        if (mesg->ExpandCode == LIGHT_STATE_ROTATE &&
+                            Light_YELLOW[mesg->Data4 - 1U]->state != LIGHT_STATE_ROTATE)
+                        {
+                            Light_YELLOW[mesg->Data4 - 1U]->index = Light_YELLOW[mesg->Data4 - 1U]->start;
+                        }
                         Light_YELLOW[mesg->Data4 - 1U]->state = mesg->ExpandCode;
                     }
                 }

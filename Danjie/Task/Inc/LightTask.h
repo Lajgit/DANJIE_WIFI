@@ -26,6 +26,7 @@ typedef enum
     LIGHT_STATE_ON,
     LIGHT_STATE_FLOW,
     LIGHT_STATE_BLINK,
+    LIGHT_STATE_ROTATE, /* 中文注释：0x04，相邻两颗灯珠环形旋转 */
 }Lightstate_t;
 
 void LightTask_Init(void);

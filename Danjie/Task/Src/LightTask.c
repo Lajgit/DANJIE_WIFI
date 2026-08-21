@@ -130,7 +130,7 @@ void PinkLight_SetState(uint8_t light_id, uint8_t state)
         return;
     }
 
-    /* 中文注释：粉灯不支持流水0x02，只处理关闭、打开和闪烁 */
+    /* 中文注释：粉灯不支持流水0x02和旋转0x04，只处理关闭、打开和闪烁 */
     if (state != LIGHT_STATE_OFF &&
         state != LIGHT_STATE_ON &&
         state != LIGHT_STATE_BLINK)
@@ -262,7 +262,7 @@ static void IdleLight1Flow_Task(void)
     }
 }
 
-/// 洞口灯光流水/开关/闪烁任务
+/// 洞口灯光流水/开关/闪烁/旋转任务
 static void LightBufferFlush(Light_Handle_t *light, RGB_t color)
 {
     if (light->state == LIGHT_STATE_FLOW)
@@ -287,6 +287,26 @@ static void LightBufferFlush(Light_Handle_t *light, RGB_t color)
             RGB_SetMoreColor(light->light, light->start, light->end, color, *(light->Lightness), 255);
         else
             RGB_SetMoreColor(light->light, light->start, light->end, NONE, *(light->Lightness), 0);
+    }
+    else if (light->state == LIGHT_STATE_ROTATE)
+    {
+        uint16_t next_index;
+
+        /* 中文注释：0x04旋转始终只点亮相邻两颗，末尾按N,1方式回绕 */
+        if (light->index < light->start || light->index > light->end)
+            light->index = light->start;
+
+        next_index = light->index + 1U;
+        if (next_index > light->end)
+            next_index = light->start;
+
+        RGB_SetMoreColor(light->light, light->start, light->end, NONE, *(light->Lightness), 0);
+        RGB_SetMoreColor(light->light, light->index, light->index, color, *(light->Lightness), 255);
+        RGB_SetMoreColor(light->light, next_index, next_index, color, *(light->Lightness), 255);
+
+        light->index++;
+        if (light->index > light->end)
+            light->index = light->start;
     }
 }
 
