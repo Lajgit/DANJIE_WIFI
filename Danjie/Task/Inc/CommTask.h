@@ -8,9 +8,11 @@
 // #define VERSION 20260508
 //V1.0.5.0 增加了舵机控制和灯光闪烁控制
 //V1.0.6.0 增加了旋转灯效
+//V1.0.7.0 修改了灯光闪烁控制逻辑，增加了鼻子
+
 #define VERSION_MAJOR  1U
 #define VERSION_MINOR  0U
-#define VERSION_PATCH  6U
+#define VERSION_PATCH  7U
 #define VERSION_BUILD  0U
 
 #define VERSION ((VERSION_MAJOR << 24) | \
