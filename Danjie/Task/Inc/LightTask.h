@@ -13,9 +13,10 @@
 #define LightPause_Time 500
 #define VictoryTime 6000
 
-/* 粉灯通信编号：鼻子不参与通信控制，始终关闭 */
-#define PINK_LIGHT_LEFT  0x02U
-#define PINK_LIGHT_RIGHT 0x03U
+/* 粉灯通信编号：0x01左眼，0x02右眼，0x03鼻子 */
+#define PINK_LIGHT_LEFT  0x01U
+#define PINK_LIGHT_RIGHT 0x02U
+#define PINK_LIGHT_NOSE  0x03U
 
 /* 闪烁周期500ms：亮250ms，灭250ms */
 #define LIGHT_BLINK_HALF_TIME 250U
