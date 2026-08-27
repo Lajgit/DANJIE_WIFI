@@ -230,13 +230,14 @@ static void USART1_Deal(void *Rx_mesg)
             case r_LightControl:
                 /*
                  * 中文注释：
-                 * Data2：粉灯编号，0x02左眼，0x03右眼；0x00不控制粉灯。
+                 * Data2：粉灯编号，0x01左眼，0x02右眼，0x03鼻子；0x00不控制粉灯。
                  * Data3：蓝灯编号0x01~0x08；Data4：黄灯编号0x01~0x08。
                  * ExpandCode：0x00关闭，0x01打开，0x02流水，0x03闪烁，0x04双灯珠旋转。
-                 * 粉灯不支持0x02流水和0x04旋转，鼻子灯始终关闭。
+                 * 粉灯只处理0x00、0x01、0x03，不受0x02流水和0x04旋转控制。
                  */
                 if (mesg->Data2 == PINK_LIGHT_LEFT ||
-                    mesg->Data2 == PINK_LIGHT_RIGHT)
+                    mesg->Data2 == PINK_LIGHT_RIGHT ||
+                    mesg->Data2 == PINK_LIGHT_NOSE)
                 {
                     PinkLight_SetState(mesg->Data2, mesg->ExpandCode);
                 }
@@ -502,7 +503,7 @@ void MesgDeal_Task(void)
 {
     ListNode_t *Current = DealList.Head;
     uint32_t CurrentTime = HAL_GetTick();
-    for (uint8_t i = 0; i < DealList.NodeCount; i++)
+    for (uint8_t i = 0; i < ResendList.NodeCount; i++)
     {
         // 达到超时时间则从列表中删除，表示可接收同样ID的新消息
         if (CurrentTime - Current->Value > MesgDeal_Time)
