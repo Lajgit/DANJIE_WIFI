@@ -503,7 +503,7 @@ void MesgDeal_Task(void)
 {
     ListNode_t *Current = DealList.Head;
     uint32_t CurrentTime = HAL_GetTick();
-    for (uint8_t i = 0; i < ResendList.NodeCount; i++)
+    for (uint8_t i = 0; i < DealList.NodeCount; i++)
     {
         // 达到超时时间则从列表中删除，表示可接收同样ID的新消息
         if (CurrentTime - Current->Value > MesgDeal_Time)
