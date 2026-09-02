@@ -60,6 +60,9 @@ static uint16_t IdleLight1FlowIndex = 0U;
 static uint32_t IdleLight1FlowTick = 0U;
 static uint32_t IdleLight1FlowHoldTick = 0U;
 
+/* 中文注释：Light1所有RGB修改在一轮LightTask结束后统一刷新，避免重复启动CH1 DMA */
+static uint8_t Light1RefreshPending = 0U;
+
 extern Event_Handle_t Event;
 extern Setting_TypeDef Setting;
 void LightTask_Init(void)
@@ -99,7 +102,10 @@ void LightTask_Init(void)
     LightDerive_Init(&Light_Y8, &Light2, 51, 58, (uint8_t *)&Setting.Board_Lightness);
     RGB_SetAllColor(&Light1, NONE, 0, 0);
     RGB_SetAllColor(&Light2, NONE, 0, 0);
-    RGB_Flush(&Light1);
+
+    /* 中文注释：启动Light1初始DMA前先占用信号量，完成中断后再释放 */
+    if (SemaphoreTake(&Semaphore1) == true)
+        RGB_Flush(&Light1);
     RGB_Flush(&Light2);
 
     LightBlinkTick = HAL_GetTick();
@@ -229,7 +235,7 @@ static void PinkLight_Task(void)
     }
 
     if (need_flush != 0U)
-        RGB_Flush(&Light1);
+        Light1RefreshPending = 1U;
 }
 
 static void IdleLight1Flow_Task(void)
@@ -247,7 +253,7 @@ static void IdleLight1Flow_Task(void)
         /* 中文注释：待机流水只清蓝灯区域，跳过鼻子和左右眼 */
         RGB_SetMoreColor(&Light1, 0, 31, NONE, LightBoard_Lightness, 0);
         RGB_SetMoreColor(&Light1, 36, 61, NONE, LightBoard_Lightness, 0);
-        RGB_Flush(&Light1);
+        Light1RefreshPending = 1U;
         return;
     }
 
@@ -260,7 +266,7 @@ static void IdleLight1Flow_Task(void)
             IdleLight1FlowTick = now;
             RGB_SetMoreColor(&Light1, 0, 31, NONE, LightBoard_Lightness, 0);
             RGB_SetMoreColor(&Light1, 36, 61, NONE, LightBoard_Lightness, 0);
-            RGB_Flush(&Light1);
+            Light1RefreshPending = 1U;
         }
         return;
     }
@@ -275,7 +281,7 @@ static void IdleLight1Flow_Task(void)
         (IdleLight1FlowIndex >= 36U && IdleLight1FlowIndex <= 61U))
     {
         RGB_SetMoreColor(&Light1, IdleLight1FlowIndex, IdleLight1FlowIndex, SKYBLUE, LightBoard_Lightness, 255);
-        RGB_Flush(&Light1);
+        Light1RefreshPending = 1U;
     }
 
     IdleLight1FlowIndex++;
@@ -379,7 +385,7 @@ static void LightBlink_Task(void)
     }
 
     if (refresh_light1 != 0U)
-        RGB_Flush(&Light1);
+        Light1RefreshPending = 1U;
     if (refresh_light2 != 0U)
         RGB_Flush(&Light2);
 }
@@ -392,8 +398,21 @@ static void LightFlush_Task(void)
         LightBufferFlush(Light_BLUE[i], SKYBLUE);
         LightBufferFlush(Light_YELLOW[i], GREEN);
     }
-    RGB_Flush(&Light1);
+    Light1RefreshPending = 1U;
     RGB_Flush(&Light2);
+}
+
+/* 中文注释：Light1一轮主循环只在这里启动一次DMA；上一帧未完成则保留刷新请求到下一轮 */
+static void Light1Flush_Task(void)
+{
+    if (Light1RefreshPending == 0U)
+        return;
+
+    if (SemaphoreTake(&Semaphore1) == false)
+        return;
+
+    RGB_Flush(&Light1);
+    Light1RefreshPending = 0U;
 }
 
 /// 灯光任务
@@ -410,9 +429,10 @@ void LightTask(void)
 
     if (Scene == SettingScene)
     {
-        /* 中文注释：设置场景只点亮蓝灯区域，跳过全部粉灯 */
-        LightEffect_Unblock_SetColor(&Light1, 0, 31, WHITE, LightBoard_Lightness, 255, true);
-        LightEffect_Unblock_SetColor(&Light1, 36, 61, WHITE, LightBoard_Lightness, 255, true);
+        /* 中文注释：设置场景只更新Light1 RGB缓冲，统一在本轮末尾刷新一次 */
+        RGB_SetMoreColor(&Light1, 0, 31, WHITE, LightBoard_Lightness, 255);
+        RGB_SetMoreColor(&Light1, 36, 61, WHITE, LightBoard_Lightness, 255);
+        Light1RefreshPending = 1U;
         BreathLight_SetLightKeep(&J2, 0, Setting.LightBelt_Lightness, 255);
         BreathLight_SetLightKeep(&J3, 0, Setting.LightBelt_Lightness, 255);
         BreathLight_SetLightKeep(&J6, 0, Setting.LightBelt_Lightness, 255);
@@ -437,8 +457,8 @@ void LightTask(void)
             /* 中文注释：场景切换只清蓝灯区域，禁止改写鼻子32~35和左右眼62~65 */
             RGB_SetMoreColor(&Light1, 0, 31, NONE, 0, 0);
             RGB_SetMoreColor(&Light1, 36, 61, NONE, 0, 0);
+            Light1RefreshPending = 1U;
             RGB_SetAllColor(&Light2, NONE, 0, 0);
-            RGB_Flush(&Light1);
             RGB_Flush(&Light2);
             //     // LightResume();
             EventGroupClearBits(&Event, Event_SceneChange);
@@ -465,8 +485,8 @@ void LightTask(void)
             /* 中文注释：小游戏场景只清蓝灯区域，禁止改写全部粉灯 */
             RGB_SetMoreColor(&Light1, 0, 31, NONE, 0, 0);
             RGB_SetMoreColor(&Light1, 36, 61, NONE, 0, 0);
+            Light1RefreshPending = 1U;
             RGB_CleanAll(&Light2);
-            RGB_Flush(&Light1);
             RGB_Flush(&Light2);
         }
     }
@@ -478,12 +498,15 @@ void LightTask(void)
             /* 中文注释：小游戏场景只清蓝灯区域，禁止改写全部粉灯 */
             RGB_SetMoreColor(&Light1, 0, 31, NONE, 0, 0);
             RGB_SetMoreColor(&Light1, 36, 61, NONE, 0, 0);
+            Light1RefreshPending = 1U;
             RGB_CleanAll(&Light2);
-            RGB_Flush(&Light1);
             RGB_Flush(&Light2);
         }
     }
 
-    /* 中文注释：左眼、右眼、鼻子只根据通信设置的状态及各自闪烁时基运行 */
+    /* 中文注释：粉灯先写入最终RGB状态，再由Light1统一刷新 */
     PinkLight_Task();
+
+    /* 中文注释：本轮所有Light1状态合并完成后，仅允许启动一次CH1 DMA */
+    Light1Flush_Task();
 }
