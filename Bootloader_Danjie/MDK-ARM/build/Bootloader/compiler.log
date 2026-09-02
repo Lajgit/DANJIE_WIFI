@@ -13,14 +13,11 @@ The amount of Asm files: 1
 
 >>> cc
 
-".\..\App\Src\app_bootloader.c", line 65: Warning:  #550-D: variable "ProgramStatus" was set but never used
-      HAL_StatusTypeDef ProgramStatus;
-                        ^
-.\..\App\Src\app_bootloader.c: 1 warning, 0 errors
+
 
 >>> ld
 
-Program Size: Code=16662 RO-data=458 RW-data=132 ZI-data=18868  
+Program Size: Code=20434 RO-data=458 RW-data=124 ZI-data=17452  
 
 
 >>> postbuild

@@ -1,4 +1,4 @@
---cpu Cortex-M4.fp --library_type=microlib --scatter e:/单片机项目/Source/Bootloader/Bootloader_F407/MDK-ARM/build/Bootloader/Bootloader_F407.sct --strict --summary_stderr --info summarysizes --map --xref --callgraph --symbols --info sizes --info totals --info unused --info veneers
+--cpu Cortex-M4.fp --library_type=microlib --scatter e:/单片机项目/ChatGPT单片机项目/弹界联网版/Bootloader_Danjie/MDK-ARM/build/Bootloader/Bootloader_F407.sct --strict --summary_stderr --info summarysizes --map --xref --callgraph --symbols --info sizes --info totals --info unused --info veneers
 --list .\build\Bootloader\Bootloader_F407.map
 .\build\Bootloader\.obj\__\App\Src\app_bootloader.o
 .\build\Bootloader\.obj\__\App\Src\app_sd.o

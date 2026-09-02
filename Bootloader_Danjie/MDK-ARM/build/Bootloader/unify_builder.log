@@ -377,3 +377,47 @@ These source files will be recompiled
 [2026-06-29 16:25:18]	[done]
 	build successfully !
 
+[2026-08-31 18:20:49]	[info] incremental build: 37 source files changed
+These source files will be recompiled
+---
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\App\Src\app_bootloader.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\App\Src\app_sd.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\App\Src\app_ws2812.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\App\Src\fatfs_sd.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\dma.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\gpio.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\main.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\spi.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\stm32f4xx_hal_msp.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\stm32f4xx_it.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\system_stm32f4xx.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\tim.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\usart.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_cortex.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_dma.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_dma_ex.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_exti.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_flash.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_flash_ex.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_flash_ramfunc.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_gpio.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_pwr.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_pwr_ex.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_rcc.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_rcc_ex.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_spi.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_tim.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_tim_ex.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Drivers\STM32F4xx_HAL_Driver\Src\stm32f4xx_hal_uart.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\FATFS\App\fatfs.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\FATFS\Target\user_diskio.c': compiler options has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Middlewares\Third_Party\FatFs\src\diskio.c': source file has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Middlewares\Third_Party\FatFs\src\ff.c': source file has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Middlewares\Third_Party\FatFs\src\ff_gen_drv.c': source file has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Middlewares\Third_Party\FatFs\src\option\syscall.c': source file has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\MDK-ARM\startup_stm32f407xx.s': source file has been changed.
+
+[2026-08-31 18:20:51]	[done]
+	build successfully !
+
