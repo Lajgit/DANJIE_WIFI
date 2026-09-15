@@ -9,11 +9,12 @@
 //V1.0.5.0 增加了舵机控制和灯光闪烁控制
 //V1.0.6.0 增加了旋转灯效
 //V1.0.7.0 修改了灯光闪烁控制逻辑，增加了鼻子
-//V1.0.8.0 合并Light1刷新避免DMA缓冲竞争
+//V1.0.8.0 合并Light1刷新避免DMA缓冲竞争、
+//V1.0.9.0 屏蔽四个特殊按键，客户定制版
 
 #define VERSION_MAJOR  1U
 #define VERSION_MINOR  0U
-#define VERSION_PATCH  8U
+#define VERSION_PATCH  9U
 #define VERSION_BUILD  0U
 
 #define VERSION ((VERSION_MAJOR << 24) | \
