@@ -36,7 +36,8 @@ DRESULT SD_disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
 
 extern SPI_HandleTypeDef 	hspi1;
 #define HSPI_SDCARD		 	&hspi1
-#define	SD_CS_PORT			GPIOB
-#define SD_CS_PIN			GPIO_PIN_0
+/* 中文注释：SD卡片选统一使用Cube配置中的PA4，避免驱动层重复写死引脚。 */
+#define	SD_CS_PORT			SD_CS_GPIO_Port
+#define SD_CS_PIN			SD_CS_Pin
 
 #endif
