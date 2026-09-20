@@ -255,7 +255,7 @@ void Device_Init(void)
     Device_Motor_Init(&Motor_Hoolle2.Motor, &htim1, TIM_CHANNEL_3, &htim1, TIM_CHANNEL_4);
     Device_Switch_Init(&Card.Switch, CardOutput_GPIO_Port, CardOutput_Pin, GPIO_PIN_SET);
     Device_Switch_Init(&Lock_Valve.Switch, GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-    Device_Servo_Init(&Servo1, &htim2, TIM_CHANNEL_3, 45, 135, 90);
+    Device_Servo_Init(&Servo1, &htim2, TIM_CHANNEL_3, 53, 127, 90);
     Device_Servo_Init(&Servo2, &htim2, TIM_CHANNEL_1, 0, 180, 110);
     Device_Servo_Init(&Servo3, &htim2, TIM_CHANNEL_2, 0, 180, 180);
     

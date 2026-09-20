@@ -334,7 +334,7 @@ static void USART3_Deal(void *Rx_mesg)
             break;
         /// 键盘
         case 0x02:
-            // Comm_SendMesg_FillData(&Tx1, Board_to_Android, 0x15, mesg->Data4, mesg->ExpandCode);
+            Comm_SendMesg_FillData(&Tx1, Board_to_Android, 0x15, mesg->Data4, mesg->ExpandCode);
             break;
         /// 编码器
         case 0x03:
