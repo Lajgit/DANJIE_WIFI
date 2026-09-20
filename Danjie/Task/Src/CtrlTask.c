@@ -10,6 +10,8 @@
 #include "string.h"
 
 #define DoorServoTimeout_time 200
+#define SERVO1_RELEASE_TIME_MS 200U
+#define SERVO1_CENTER_ANGLE 90U
 #define STEEL_BALL_OUTPUT_INTERVAL_MS 500U
 
 //测试舵机2
@@ -24,6 +26,10 @@ Switch_Valve Lock_Valve;
 
 static uint32_t DoorServoRuntick = 0;
 static uint8_t DoorServoRunning = 0;
+
+/* 舵机1最后一次有效控制后200ms释放PWM，避免到位或堵转后持续带力。 */
+static uint32_t Servo1LastControlTick = 0U;
+static uint8_t Servo1PwmRunning = 0U;
 
 extern Tx_HandleTypeDef Tx1;
 extern Scene_t Scene;
@@ -57,6 +63,67 @@ static void Ctrl_DoorServo(void)
         HAL_TIM_PWM_Stop(Servo3.htim, Servo3.channel);
         DoorServoRunning = 0;
     }
+}
+
+/* 舵机1重新收到有效控制时恢复PWM输出。 */
+static void Servo1_StartPwm(void)
+{
+    if (Servo1PwmRunning == 0U)
+    {
+        HAL_TIM_PWM_Start(Servo1.htim, Servo1.channel);
+        Servo1PwmRunning = 1U;
+    }
+}
+
+/* 舵机1在最后一次有效角度变化200ms后停止PWM。 */
+static void Ctrl_Servo1(void)
+{
+    if (Servo1PwmRunning != 0U &&
+        (uint32_t)(Get_SysTime() - Servo1LastControlTick) >= SERVO1_RELEASE_TIME_MS)
+    {
+        HAL_TIM_PWM_Stop(Servo1.htim, Servo1.channel);
+        Servo1PwmRunning = 0U;
+    }
+}
+
+/*
+ * 编码器左旋：只有未到最小限位时才产生新的PWM驱动并刷新200ms计时。
+ * 已到最小限位后继续左旋不刷新计时，原PWM会按最后一次有效控制自动释放。
+ */
+void Servo1_Decrease(void)
+{
+    if (Servo1.angle <= Servo1.min_angle)
+    {
+        return;
+    }
+
+    Servo1_StartPwm();
+    Servo1.DecreaseAngle(&Servo1, 1U);
+    Servo1LastControlTick = Get_SysTime();
+}
+
+/*
+ * 编码器右旋：只有未到最大限位时才产生新的PWM驱动并刷新200ms计时。
+ * 已到最大限位后继续右旋不刷新计时，原PWM会按最后一次有效控制自动释放。
+ */
+void Servo1_Increase(void)
+{
+    if (Servo1.angle >= Servo1.max_angle)
+    {
+        return;
+    }
+
+    Servo1_StartPwm();
+    Servo1.IncreaseAngle(&Servo1, 1U);
+    Servo1LastControlTick = Get_SysTime();
+}
+
+/* 安卓归零或编码器按下归零时，重新启用PWM并在200ms后自动释放。 */
+void Servo1_Reset(void)
+{
+    Servo1_StartPwm();
+    Servo1.SetAngle(&Servo1, SERVO1_CENTER_ANGLE);
+    Servo1LastControlTick = Get_SysTime();
 }
 
 static void Ctrl_HoolleMotor(Motor_Hoolle *Motor, uint16_t speed, uint8_t dir, uint32_t timeout, uint32_t reverse_time, uint8_t retry_times, void (*Timeout_callbcak)(void))
@@ -255,7 +322,10 @@ void Device_Init(void)
     Device_Motor_Init(&Motor_Hoolle2.Motor, &htim1, TIM_CHANNEL_3, &htim1, TIM_CHANNEL_4);
     Device_Switch_Init(&Card.Switch, CardOutput_GPIO_Port, CardOutput_Pin, GPIO_PIN_SET);
     Device_Switch_Init(&Lock_Valve.Switch, GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-    Device_Servo_Init(&Servo1, &htim2, TIM_CHANNEL_3, 53, 127, 90);
+    Device_Servo_Init(&Servo1, &htim2, TIM_CHANNEL_3, 53, 127, SERVO1_CENTER_ANGLE);
+    /* Device_Servo_Init已经启动舵机1 PWM，上电默认角度同样按200ms后释放。 */
+    Servo1PwmRunning = 1U;
+    Servo1LastControlTick = Get_SysTime();
     Device_Servo_Init(&Servo2, &htim2, TIM_CHANNEL_1, 0, 180, 110);
     Device_Servo_Init(&Servo3, &htim2, TIM_CHANNEL_2, 0, 180, 180);
     
@@ -370,6 +440,7 @@ void CtrlTask(void)
     Ctrl_CardMotor(&Card, CardMotorTimeout_time, CardMotorTimeout_callback);
     /*==============电磁阀控制===============*/
     Ctrl_Valve(&Lock_Valve, ValveTimeout_time, NULL);
+    Ctrl_Servo1();
     // Servo2_OpenCloseTest();//测试舵机2开关门循环
     Ctrl_DoorServo();
     // Servo_AutoRun(&Servo1, 75);//舵机1自动摆动
