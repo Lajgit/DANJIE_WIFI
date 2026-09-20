@@ -9,7 +9,10 @@
 
 #define DEBUG_PRINT 0   //调试输出
 
-#define FileName_Bin "danjie.bin"   //烧录文件名
+/* 中文注释：SD升级文件名由Board ID选择。 */
+#define FileName_Danjie "danjie.bin"
+#define FileName_PanTao "pantao.bin"
+#define FileName_Niudan "niudan.bin"
 
 
 FRESULT mount_disk(FATFS *fs, const TCHAR *path, BYTE opt);

@@ -1,4 +1,5 @@
 #include "app_ws2812.h"
+#include "app_board.h"
 #include "tim.h"
 // 预设颜色RGB表
 RGB_t Color_table[] =
@@ -41,6 +42,19 @@ void Light_SetAllColor(RGB_t color, uint16_t *buffer)
                 buffer[i * 24 + j] = code0;
         }
     }
-    HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t *)buffer, Light_CRRbuffer_SIZE);
-    HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_2, (uint32_t *)buffer, Light_CRRbuffer_SIZE);
+    /*
+     * 中文注释：
+     * 弹界原Bootloader同时驱动TIM3_CH1和CH2；
+     * 蟠桃原Bootloader只驱动TIM3_CH2；
+     * 扭蛋机沿用当前使用的弹界Bootloader灯效逻辑。
+     */
+    if (Boot_BoardGetId() == BOOT_BOARD_PANTAO)
+    {
+        HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_2, (uint32_t *)buffer, Light_CRRbuffer_SIZE);
+    }
+    else
+    {
+        HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_1, (uint32_t *)buffer, Light_CRRbuffer_SIZE);
+        HAL_TIM_PWM_Start_DMA(&htim3, TIM_CHANNEL_2, (uint32_t *)buffer, Light_CRRbuffer_SIZE);
+    }
 }

@@ -1,5 +1,6 @@
 #include "app_bootloader.h"
 #include "app_ws2812.h"
+#include "app_board.h"
 #include "usart.h"
 #include <stddef.h>
 #include <string.h>
@@ -31,6 +32,71 @@ static OtaPacket_t Packet;
 static FIL SdFirmwareFile;
 static uint8_t RxFrame[2U + 6U + OTA_MAX_PAYLOAD_SIZE + 4U];
 static uint8_t TxFrame[2U + 6U + 10U + 4U];
+
+/*
+ * 中文注释：
+ * APM32F407 OTP区域为0x1FFF7800~0x1FFF7A0F。
+ * 每条Board ID记录占12字节：magic、board_id、board_id按位取反。
+ * 扫描8个记录槽并采用最后一条有效记录，若误写可继续使用后续空槽修正。
+ * Bootloader只读取OTP，不在运行时写OTP，避免误操作一次性存储区。
+ */
+#define BOOT_BOARD_OTP_BASE          0x1FFF7800U
+#define BOOT_BOARD_OTP_RECORD_MAGIC  0x44494442U /* 内存字节序为"BDID" */
+#define BOOT_BOARD_OTP_RECORD_WORDS  3U
+#define BOOT_BOARD_OTP_RECORD_COUNT  8U
+
+static BootBoardId_t CachedBoardId = BOOT_BOARD_DANJIE;
+static bool CachedBoardIdReady = false;
+
+static bool Boot_BoardIdIsValid(uint32_t board_id)
+{
+    return board_id == (uint32_t)BOOT_BOARD_DANJIE ||
+           board_id == (uint32_t)BOOT_BOARD_PANTAO ||
+           board_id == (uint32_t)BOOT_BOARD_NIUDAN;
+}
+
+BootBoardId_t Boot_BoardGetId(void)
+{
+    BootBoardId_t board_id = BOOT_BOARD_DANJIE;
+
+    if (CachedBoardIdReady)
+        return CachedBoardId;
+
+    for (uint32_t index = 0U; index < BOOT_BOARD_OTP_RECORD_COUNT; index++)
+    {
+        const volatile uint32_t *record =
+            (const volatile uint32_t *)(BOOT_BOARD_OTP_BASE +
+            index * BOOT_BOARD_OTP_RECORD_WORDS * sizeof(uint32_t));
+        uint32_t magic = record[0];
+        uint32_t value = record[1];
+        uint32_t value_inverse = record[2];
+
+        if (magic == BOOT_BOARD_OTP_RECORD_MAGIC &&
+            (value ^ value_inverse) == 0xFFFFFFFFU &&
+            Boot_BoardIdIsValid(value))
+        {
+            board_id = (BootBoardId_t)value;
+        }
+    }
+
+    CachedBoardId = board_id;
+    CachedBoardIdReady = true;
+    return CachedBoardId;
+}
+
+const char *Boot_BoardGetFirmwareFileName(void)
+{
+    switch (Boot_BoardGetId())
+    {
+    case BOOT_BOARD_PANTAO:
+        return FileName_PanTao;
+    case BOOT_BOARD_NIUDAN:
+        return FileName_Niudan;
+    case BOOT_BOARD_DANJIE:
+    default:
+        return FileName_Danjie;
+    }
+}
 
 static uint16_t ReadU16LE(const uint8_t *data)
 {
@@ -654,7 +720,7 @@ static bool Boot_TrySdUpgrade(void)
         f_mount(NULL, "", 0);
         return false;
     }
-    if (f_open(&SdFirmwareFile, FileName_Bin, FA_READ) != FR_OK)
+    if (f_open(&SdFirmwareFile, Boot_BoardGetFirmwareFileName(), FA_READ) != FR_OK)
     {
         f_mount(NULL, "", 0);
         return false;

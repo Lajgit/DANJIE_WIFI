@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "tim.h"
+#include "app_board.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -181,24 +182,36 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
 
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
-    /**TIM3 GPIO Configuration
-    PC9     ------> TIM3_CH4
-    PB4     ------> TIM3_CH1
-    PB5     ------> TIM3_CH2
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_9;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    /*
+     * 中文注释：根据Board ID恢复各项目原Bootloader的TIM3灯效引脚。
+     * 弹界/扭蛋：PC9=CH4、PB4=CH1、PB5=CH2。
+     * 蟠桃：PC7=CH2、PC9=CH4、PB4=CH1。
+     */
+    if (Boot_BoardGetId() == BOOT_BOARD_PANTAO)
+    {
+      GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_9;
+      GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+      HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+      GPIO_InitStruct.Pin = GPIO_PIN_4;
+      HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    }
+    else
+    {
+      GPIO_InitStruct.Pin = GPIO_PIN_9;
+      GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+      GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+      HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+      GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
+      HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    }
 
   /* USER CODE BEGIN TIM3_MspPostInit 1 */
 
