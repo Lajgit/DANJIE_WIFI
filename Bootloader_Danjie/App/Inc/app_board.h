@@ -9,8 +9,8 @@ extern "C" {
 
 /*
  * 中文注释：
- * Board ID保存在APM32F407 OTP区域，由同一份Bootloader在运行时读取。
- * OTP未写入有效Board ID时默认按弹界处理，兼容现有弹界Bootloader行为。
+ * Board ID在Boot_BoardGetId()中直接指定，修改后分别编译三份Bootloader。
+ * 不读取或写入OTP，各板型通过Board ID选择升级文件名和原有灯效。
  */
 typedef enum
 {

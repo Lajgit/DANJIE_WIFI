@@ -33,55 +33,14 @@ static FIL SdFirmwareFile;
 static uint8_t RxFrame[2U + 6U + OTA_MAX_PAYLOAD_SIZE + 4U];
 static uint8_t TxFrame[2U + 6U + 10U + 4U];
 
-/*
- * 中文注释：
- * APM32F407 OTP区域为0x1FFF7800~0x1FFF7A0F。
- * 每条Board ID记录占12字节：magic、board_id、board_id按位取反。
- * 扫描8个记录槽并采用最后一条有效记录，若误写可继续使用后续空槽修正。
- * Bootloader只读取OTP，不在运行时写OTP，避免误操作一次性存储区。
- */
-#define BOOT_BOARD_OTP_BASE          0x1FFF7800U
-#define BOOT_BOARD_OTP_RECORD_MAGIC  0x44494442U /* 内存字节序为"BDID" */
-#define BOOT_BOARD_OTP_RECORD_WORDS  3U
-#define BOOT_BOARD_OTP_RECORD_COUNT  8U
-
-static BootBoardId_t CachedBoardId = BOOT_BOARD_DANJIE;
-static bool CachedBoardIdReady = false;
-
-static bool Boot_BoardIdIsValid(uint32_t board_id)
-{
-    return board_id == (uint32_t)BOOT_BOARD_DANJIE ||
-           board_id == (uint32_t)BOOT_BOARD_PANTAO ||
-           board_id == (uint32_t)BOOT_BOARD_NIUDAN;
-}
-
 BootBoardId_t Boot_BoardGetId(void)
 {
+    /* 中文注释：只修改下一行后重新编译，不使用OTP。
+     * 弹界：BOOT_BOARD_DANJIE；蟠桃：BOOT_BOARD_PANTAO；扭蛋：BOOT_BOARD_NIUDAN。
+     * 每次编译后将HEX另存为对应板型名称，避免下次编译覆盖。
+     */
     BootBoardId_t board_id = BOOT_BOARD_DANJIE;
-
-    if (CachedBoardIdReady)
-        return CachedBoardId;
-
-    for (uint32_t index = 0U; index < BOOT_BOARD_OTP_RECORD_COUNT; index++)
-    {
-        const volatile uint32_t *record =
-            (const volatile uint32_t *)(BOOT_BOARD_OTP_BASE +
-            index * BOOT_BOARD_OTP_RECORD_WORDS * sizeof(uint32_t));
-        uint32_t magic = record[0];
-        uint32_t value = record[1];
-        uint32_t value_inverse = record[2];
-
-        if (magic == BOOT_BOARD_OTP_RECORD_MAGIC &&
-            (value ^ value_inverse) == 0xFFFFFFFFU &&
-            Boot_BoardIdIsValid(value))
-        {
-            board_id = (BootBoardId_t)value;
-        }
-    }
-
-    CachedBoardId = board_id;
-    CachedBoardIdReady = true;
-    return CachedBoardId;
+    return board_id;
 }
 
 const char *Boot_BoardGetFirmwareFileName(void)
