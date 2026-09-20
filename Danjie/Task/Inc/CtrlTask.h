@@ -40,6 +40,12 @@ void Device_Init(void);
 void CtrlTask(void);
 void Hoolle_Output(Motor_Hoolle *Motor, uint16_t num);
 void SteelBall_OutputEverySecond(void);
+
+/* 舵机1控制：有效动作后200ms自动释放PWM，限位方向继续旋转不刷新计时。 */
+void Servo1_Decrease(void);
+void Servo1_Increase(void);
+void Servo1_Reset(void);
+
 void Card_Output(Motor_Card *Switch, uint16_t num);
 void Valve_Start(Switch_Valve *Valve, uint8_t TriggerCount);
 void Device_Stop(void);
