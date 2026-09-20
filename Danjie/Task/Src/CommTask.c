@@ -281,7 +281,7 @@ static void USART1_Deal(void *Rx_mesg)
                 break;
             /// 舵机归零
             case r_ServoReset:
-                Servo1.SetAngle(&Servo1, 90);
+                Servo1_Reset();
                 break;
                 /// 停止所有设备
             case r_StopAllDevice:
@@ -342,20 +342,20 @@ static void USART3_Deal(void *Rx_mesg)
             if (mesg->ExpandCode == 0x00)
             {
                 if (ServoKnobEnabled)
-                    Servo1.DecreaseAngle(&Servo1, 1);
+                    Servo1_Decrease();
                 Comm_SendMesg_FillData(&Tx1, Board_to_Android, t_Encoder, 0x00, 0x01);
             }
             else if (mesg->ExpandCode == 0x01)
             {
                 if (ServoKnobEnabled)
-                    Servo1.IncreaseAngle(&Servo1, 1);
+                    Servo1_Increase();
                 Comm_SendMesg_FillData(&Tx1, Board_to_Android, t_Encoder, 0x00, 0x00);
 
             }
             else if (mesg->ExpandCode == 0x02)
             {
                 if (ServoKnobEnabled)
-                    Servo1.SetAngle(&Servo1, 90);
+                    Servo1_Reset();
             }
             break;
         }
