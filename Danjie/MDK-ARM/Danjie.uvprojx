@@ -248,8 +248,8 @@
               </IRAM>
               <IROM>
                 <Type>1</Type>
-                <StartAddress>0x8000000</StartAddress>
-                <Size>0x100000</Size>
+                <StartAddress>0x800C000</StartAddress>
+                <Size>0x94000</Size>
               </IROM>
               <XRAM>
                 <Type>0</Type>
@@ -273,8 +273,8 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8000000</StartAddress>
-                <Size>0x100000</Size>
+                <StartAddress>0x800C000</StartAddress>
+                <Size>0x94000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
