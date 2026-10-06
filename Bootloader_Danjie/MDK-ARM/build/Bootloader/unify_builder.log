@@ -421,3 +421,25 @@ These source files will be recompiled
 [2026-08-31 18:20:51]	[done]
 	build successfully !
 
+[2026-09-20 14:07:53]	[info] incremental build: 3 source files changed
+These source files will be recompiled
+---
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\App\Src\fatfs_sd.c': dependence 'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\MDK-ARM\..\App\Inc\fatfs_sd.h' has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\main.c': dependence 'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\MDK-ARM\..\App\Inc\fatfs_sd.h' has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\FATFS\Target\user_diskio.c': dependence 'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\MDK-ARM\..\App\Inc\fatfs_sd.h' has been changed.
+
+[2026-09-20 14:07:54]	[done]
+	build successfully !
+
+[2026-09-20 18:11:12]	[info] incremental build: 5 source files changed
+These source files will be recompiled
+---
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\App\Src\app_bootloader.c': source file has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\App\Src\app_sd.c': dependence 'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\MDK-ARM\..\App\Inc\app_sd.h' has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\App\Src\app_ws2812.c': source file has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\main.c': dependence 'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\MDK-ARM\..\App\Inc\app_sd.h' has been changed.
+'e:\单片机项目\ChatGPT单片机项目\弹界联网版\Bootloader_Danjie\Core\Src\tim.c': source file has been changed.
+
+[2026-09-20 18:11:14]	[done]
+	build successfully !
+

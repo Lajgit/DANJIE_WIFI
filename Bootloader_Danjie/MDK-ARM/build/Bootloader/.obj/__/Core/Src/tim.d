@@ -31,3 +31,4 @@
 .\build\Bootloader\.obj\__\Core\Src\tim.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 .\build\Bootloader\.obj\__\Core\Src\tim.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 .\build\Bootloader\.obj\__\Core\Src\tim.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+.\build\Bootloader\.obj\__\Core\Src\tim.o: ../App/Inc/app_board.h

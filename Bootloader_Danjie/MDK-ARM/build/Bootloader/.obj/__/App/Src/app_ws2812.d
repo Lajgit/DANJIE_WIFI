@@ -31,4 +31,5 @@
 .\build\Bootloader\.obj\__\App\Src\app_ws2812.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 .\build\Bootloader\.obj\__\App\Src\app_ws2812.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 .\build\Bootloader\.obj\__\App\Src\app_ws2812.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+.\build\Bootloader\.obj\__\App\Src\app_ws2812.o: ../App/Inc/app_board.h
 .\build\Bootloader\.obj\__\App\Src\app_ws2812.o: ../Core/Inc/tim.h

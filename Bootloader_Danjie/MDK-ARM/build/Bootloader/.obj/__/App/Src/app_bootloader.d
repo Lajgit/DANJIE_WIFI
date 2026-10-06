@@ -40,4 +40,5 @@
 .\build\Bootloader\.obj\__\App\Src\app_bootloader.o: ../Middlewares/Third_Party/FatFs/src/diskio.h
 .\build\Bootloader\.obj\__\App\Src\app_bootloader.o: ../FATFS/Target/user_diskio.h
 .\build\Bootloader\.obj\__\App\Src\app_bootloader.o: ../App/Inc/app_ws2812.h
+.\build\Bootloader\.obj\__\App\Src\app_bootloader.o: ../App/Inc/app_board.h
 .\build\Bootloader\.obj\__\App\Src\app_bootloader.o: ../Core/Inc/usart.h

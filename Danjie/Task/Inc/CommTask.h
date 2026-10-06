@@ -12,9 +12,11 @@
 //V1.0.8.0 合并Light1刷新避免DMA缓冲竞争、
 //V1.0.9.0 屏蔽四个特殊按键，客户定制版
 //V1.0.10.0 修改舵机角度
+//V1.0.11.0 增加堵转超时
+
 #define VERSION_MAJOR  1U
 #define VERSION_MINOR  0U
-#define VERSION_PATCH  10U
+#define VERSION_PATCH  11U
 #define VERSION_BUILD  0U
 
 #define VERSION ((VERSION_MAJOR << 24) | \
