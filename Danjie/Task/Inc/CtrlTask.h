@@ -45,6 +45,8 @@ void SteelBall_OutputEverySecond(void);
 void Servo1_Decrease(void);
 void Servo1_Increase(void);
 void Servo1_Reset(void);
+/* 中文注释：上报编码器旋转事件给自动摆动控制逻辑。 */
+void Servo1_EncoderRotated(void);
 
 void Card_Output(Motor_Card *Switch, uint16_t num);
 void Valve_Start(Switch_Valve *Valve, uint8_t TriggerCount);
