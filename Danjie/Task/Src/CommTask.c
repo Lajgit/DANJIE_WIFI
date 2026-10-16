@@ -341,12 +341,16 @@ static void USART3_Deal(void *Rx_mesg)
             // 中文注释：禁用时仍上报旋钮方向，仅禁止旋钮改变Servo1角度。
             if (mesg->ExpandCode == 0x00)
             {
+                /* 中文注释：旋转立即暂停自动摆动，限位或旋钮禁用时仍计时。 */
+                Servo1_EncoderRotated();
                 if (ServoKnobEnabled)
                     Servo1_Decrease();
                 Comm_SendMesg_FillData(&Tx1, Board_to_Android, t_Encoder, 0x00, 0x01);
             }
             else if (mesg->ExpandCode == 0x01)
             {
+                /* 中文注释：右旋与左旋共用10秒等待计时。 */
+                Servo1_EncoderRotated();
                 if (ServoKnobEnabled)
                     Servo1_Increase();
                 Comm_SendMesg_FillData(&Tx1, Board_to_Android, t_Encoder, 0x00, 0x00);
