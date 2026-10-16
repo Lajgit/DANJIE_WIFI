@@ -12,6 +12,8 @@
 #define DoorServoTimeout_time 200
 #define SERVO1_RELEASE_TIME_MS 200U
 #define SERVO1_CENTER_ANGLE 90U
+#define SERVO1_AUTO_INTERVAL_MS 75U
+#define SERVO1_MANUAL_WAIT_MS 10000U
 #define STEEL_BALL_OUTPUT_INTERVAL_MS 500U
 
 //测试舵机2
@@ -30,6 +32,9 @@ static uint8_t DoorServoRunning = 0;
 /* 舵机1最后一次有效控制后200ms释放PWM，避免到位或堵转后持续带力。 */
 static uint32_t Servo1LastControlTick = 0U;
 static uint8_t Servo1PwmRunning = 0U;
+/* 中文注释：编码器旋转后暂时由玩家控制，停止旋转10秒后才恢复自动摆动。 */
+static uint32_t Servo1ManualTick = 0U;
+static uint8_t Servo1ManualPending = 0U;
 
 extern Tx_HandleTypeDef Tx1;
 extern Scene_t Scene;
@@ -124,6 +129,13 @@ void Servo1_Reset(void)
     Servo1_StartPwm();
     Servo1.SetAngle(&Servo1, SERVO1_CENTER_ANGLE);
     Servo1LastControlTick = Get_SysTime();
+}
+
+/* 中文注释：旋钮的实际转动事件用于暂停自动摆动，即使舵机已到限位也要刷新时间。 */
+void Servo1_EncoderRotated(void)
+{
+    Servo1ManualTick = Get_SysTime();
+    Servo1ManualPending = 1U;
 }
 
 static void Ctrl_HoolleMotor(Motor_Hoolle *Motor, uint16_t speed, uint8_t dir, uint32_t timeout, uint32_t reverse_time, uint8_t retry_times, void (*Timeout_callbcak)(void))
@@ -382,8 +394,33 @@ void Servo_AutoRun(servo_t *Servo, uint32_t time)
             }
         }
 
+        /* 中文注释：自动改变角度也属于有效控制，恢复PWM并刷新200ms释放计时。 */
+        if (Servo == &Servo1)
+        {
+            Servo1_StartPwm();
+            Servo1LastControlTick = time_now;
+        }
         Servo->SetAngle(Servo, Servo->angle);
     }
+}
+
+/* 中文注释：仅场景2、3、4允许自动摆动，编码器停止10秒后恢复。 */
+static void Ctrl_Servo1Auto(void)
+{
+    if (Scene != PlayingScene && Scene != LittleGame_1 && Scene != LittleGame_2)
+    {
+        Servo1ManualPending = 0U;
+        return;
+    }
+
+    if (Servo1ManualPending != 0U)
+    {
+        if ((uint32_t)(Get_SysTime() - Servo1ManualTick) < SERVO1_MANUAL_WAIT_MS)
+            return;
+        Servo1ManualPending = 0U;
+    }
+
+    Servo_AutoRun(&Servo1, SERVO1_AUTO_INTERVAL_MS);
 }
 
 /**
@@ -443,5 +480,5 @@ void CtrlTask(void)
     Ctrl_Servo1();
     // Servo2_OpenCloseTest();//测试舵机2开关门循环
     Ctrl_DoorServo();
-    // Servo_AutoRun(&Servo1, 75);//舵机1自动摆动
+    Ctrl_Servo1Auto();
 }
