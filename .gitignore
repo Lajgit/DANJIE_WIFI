@@ -1,0 +1,39 @@
+# Keil/EIDE编译输出；仅忽略实际生成目录，保留测试固件、源码和工程配置。
+/Danjie/MDK-ARM/Danjie/
+/Danjie/MDK-ARM/build/
+/Danjie/MDK-ARM/bin/
+/Danjie/MDK-ARM/obj/
+/Danjie/MDK-ARM/out/
+/Danjie/MDK-ARM/Objects/
+/Danjie/MDK-ARM/Listings/
+/Danjie_Ctrl/MDK-ARM/Danjie_Ctrl/
+/Danjie_Ctrl/MDK-ARM/build/
+/Danjie_Ctrl/MDK-ARM/bin/
+/Danjie_Ctrl/MDK-ARM/obj/
+/Danjie_Ctrl/MDK-ARM/out/
+/Danjie_Ctrl/MDK-ARM/Objects/
+/Danjie_Ctrl/MDK-ARM/Listings/
+
+# Keil用户窗口布局、启动列表、日志和验证时生成的临时工程。
+/Danjie/MDK-ARM/*.uvguix
+/Danjie/MDK-ARM/*.uvguix.*
+/Danjie/MDK-ARM/startup_*.lst
+/Danjie/MDK-ARM/*_verify.uvprojx
+/Danjie/MDK-ARM/.vscode/*.log
+/Danjie/MDK-ARM/.vscode/*.log.lock
+/Danjie_Ctrl/MDK-ARM/*.uvguix
+/Danjie_Ctrl/MDK-ARM/*.uvguix.*
+/Danjie_Ctrl/MDK-ARM/startup_*.lst
+/Danjie_Ctrl/MDK-ARM/*_verify.uvprojx
+/Danjie_Ctrl/MDK-ARM/.vscode/*.log
+/Danjie_Ctrl/MDK-ARM/.vscode/*.log.lock
+
+# EIDE运行日志及本机上下文不入库。
+/Danjie/MDK-ARM/.eide/log/
+/Danjie/MDK-ARM/.eide.usr.ctx.json
+/Danjie_Ctrl/MDK-ARM/.eide/log/
+/Danjie_Ctrl/MDK-ARM/.eide.usr.ctx.json
+
+# 根层空RTE组件头由Keil生成；保留各目标目录内的RTE配置。
+/Danjie/MDK-ARM/RTE/RTE_Components.h
+/Danjie_Ctrl/MDK-ARM/RTE/RTE_Components.h
