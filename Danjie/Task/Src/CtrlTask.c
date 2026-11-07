@@ -480,5 +480,5 @@ void CtrlTask(void)
     Ctrl_Servo1();
     // Servo2_OpenCloseTest();//测试舵机2开关门循环
     Ctrl_DoorServo();
-    Ctrl_Servo1Auto();
+    // Ctrl_Servo1Auto();
 }

@@ -137,14 +137,14 @@ static void Hoolle_1_Output_IRQ(void)
 
     if (LowCount > HOOLLE_LOW_MIN_COUNT)
     {
-        EventGroupSetBits(
-            &Mesg_event,
-            MesgEvent_RemainingHoolle);
-
         if (Motor_Hoolle1.Hoolle_num > 0U)
         {
             Motor_Hoolle1.Hoolle_num--;
             Motor_Hoolle1.RetryCount = 0;
+            /* 仅在实际扣减待吐钢珠时上报，避免数量为零后光眼干扰重复上报。 */
+            EventGroupSetBits(
+                &Mesg_event,
+                MesgEvent_RemainingHoolle);
 
             if (Motor_Hoolle1.Hoolle_num == 0U &&
                 Motor_Hoolle1.Motor.state != DEVICE_STATE_IDLE)

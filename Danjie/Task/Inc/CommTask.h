@@ -14,10 +14,11 @@
 //V1.0.10.0 修改舵机角度
 //V1.0.11.0 增加堵转超时
 //V1.0.12.0 定制版，自动摆动
+//V1.0.13.0 最后一颗从 1 减到 0 仍会上报并停机，计数已经为 0 时的后续干扰不上报
 
 #define VERSION_MAJOR  1U
 #define VERSION_MINOR  0U
-#define VERSION_PATCH  12U
+#define VERSION_PATCH  13U
 #define VERSION_BUILD  0U
 
 #define VERSION ((VERSION_MAJOR << 24) | \
